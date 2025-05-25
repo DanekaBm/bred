@@ -14,6 +14,10 @@ function Header() {
         i18n.changeLanguage(lng);
     };
 
+    console.log('User:', user);
+    console.log('Current Language:', i18n.language);
+    console.log('Current Theme:', theme);
+
     return (
         <header style={{
             display: 'flex',

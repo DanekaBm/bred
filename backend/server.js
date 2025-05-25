@@ -1,56 +1,52 @@
-// backend/server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const path = require('path'); // <--- ДОБАВЛЕНО: Импортируем модуль 'path'
+const path = require('path'); // ОЧЕНЬ ВАЖНО: Добавляем модуль 'path'
 
-// Corrected: Ensure these paths exactly match your route file names
+// Убедитесь, что эти пути точно соответствуют именам ваших файлов маршрутов (auth.js, events.js, users.js)
 const authRoutes = require('./routes/auth.js');
 const eventRoutes = require('./routes/events.js');
 const userRoutes = require('./routes/users.js');
 
-dotenv.config();
+dotenv.config(); // Загружает переменные окружения из .env файла
 
 const app = express();
 
-// !!! ИСПРАВЛЕННЫЙ ПОРЯДОК MIDDLEWARE !!!
-// Middleware должны быть в этом порядке для корректной работы с куками и CORS
+// Middleware
+app.use(express.json()); // Парсер тела запроса для JSON
+app.use(cookieParser()); // Парсер куки
 
-// 1. Body parser for JSON - для парсинга тела запросов (почти всегда первым)
-app.use(express.json());
-
-// 2. Cookie parser - ДОЛЖЕН БЫТЬ ПЕРЕД CORS, чтобы req.cookies был доступен
-app.use(cookieParser());
-
-// 3. CORS configuration - ОЧЕНЬ ВАЖНО для кросс-доменных запросов и куки
+// Конфигурация CORS
 app.use(cors({
-  origin: 'http://localhost:3001', // <--- Убедитесь, что это ТОЧНЫЙ URL вашего фронтенда
-  credentials: true, // Позволяет отправлять и получать куки и заголовки авторизации
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Явно разрешаем все необходимые методы
-  allowedHeaders: ['Content-Type', 'Authorization'], // Явно разрешаем эти заголовки
+  origin: 'http://localhost:3000', // <-- Фронтенд работает на 3000
+  credentials: true, // Разрешить отправку куки (необходимо для аутентификации)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Явно разрешенные HTTP-методы
+  allowedHeaders: ['Content-Type', 'Authorization'], // Явно разрешенные заголовки запросов
 }));
 
-// MIDDLEWARE ДЛЯ ОТДАЧИ СТАТИЧЕСКИХ ФАЙЛОВ (АВАТАРОВ)
-// Сделайте папку 'uploads' статической.
-// Она будет доступна по URL /uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // <--- ДОБАВЛЕНО: Для отдачи статических файлов
+// ОЧЕНЬ ВАЖНО: Middleware для обслуживания статических файлов (например, аватаров)
+// Все файлы в папке 'uploads' будут доступны через URL, начинающийся с '/uploads'
+// Например, файл 'backend/uploads/avatars/my_avatar.jpeg' будет доступен по 'http://localhost:5001/uploads/avatars/my_avatar.jpeg'
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Database connection
+// Подключение к базе данных MongoDB
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error(err));
+    .then(() => console.log('MongoDB подключена'))
+    .catch(err => console.error('Ошибка подключения к MongoDB:', err));
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/users', userRoutes); // For admin user management
+// Маршруты API
+app.use('/api/auth', authRoutes); // Маршруты для аутентификации (регистрация, вход, выход)
+app.use('/api/events', eventRoutes); // Маршруты для управления событиями
+app.use('/api/users', userRoutes); // Маршруты для управления пользователями (например, для админки)
 
-// Basic route for testing
+// Базовый маршрут для проверки работы API
 app.get('/', (req, res) => {
-  res.send('API is running...');
+  res.send('API запущен и работает...');
 });
 
-const PORT = process.env.PORT || 5001; // <--- Убедитесь, что backend runs on 5001
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Запуск сервера
+// Порт будет взят из переменной окружения PORT (если установлена) или по умолчанию 5001
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));

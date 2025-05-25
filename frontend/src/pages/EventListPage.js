@@ -45,7 +45,6 @@ function EventListPage() {
     // Re-render dates if language changes (optional, but good for consistency)
     useEffect(() => {
         // This useEffect is primarily to trigger re-renders if the language changes
-        // and you want the date formats to update without refetching all events.
         // It ensures the formatLocalizedDateTime function is re-evaluated.
     }, [i18n.language]);
 
@@ -106,9 +105,6 @@ function EventListPage() {
                             </Link>
                             <p style={{ color: 'var(--text-color)' }}>{event.description}</p>
                             <p style={{ color: 'var(--text-color)' }}><strong>{t('date_label')}</strong> {formatLocalizedDateTime(event.date)}</p>
-                            <p style={{ color: 'var(--text-color)' }}><strong>{t('location_label')}</strong> {event.location}</p>
-                            <p style={{ color: 'var(--text-color)' }}><strong>{t('category_label')}</strong> {event.category}</p>
-                            <p style={{ color: 'var(--text-color)' }}><strong>{t('creator_label')}</strong> {event.createdBy ? event.createdBy.name : t('unknown')}</p>
 
                             {/* Like Section */}
                             <div style={{ marginTop: '10px' }}>

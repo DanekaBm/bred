@@ -1,94 +1,115 @@
-/* src/index.css */
-:root[data-theme='light'] {
-  --background-color: #ffffff;
-  --text-color: #333333;
-  --primary-color: #007bff; /* Header background in light theme */
-  --accent-color: #0056b3; /* A darker blue for active button, or a highlight color */
-  --secondary-color: #e0e0e0; /* A light grey for inactive button, or a neutral background */
-}
+/* frontend/src/index.css */
 
-:root[data-theme='dark'] {
-  --background-color: #333333;
-  --text-color: #ffffff;
-  --primary-color: #66b3ff; /* Header background in dark theme */
-  --accent-color: #add8e6; /* A lighter blue for active button */
-  --secondary-color: #555555; /* A darker grey for inactive button */
-}
-
-body {
-  font-family: sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* src/index.css (Add these new rules to your existing CSS) */
-
+/* Базовые переменные (для светлой темы по умолчанию) */
 :root {
-    /* Default light theme variables */
-    --background-color: #f4f7f6; /* Light gray background */
-    --text-color: #333; /* Dark text */
-    --header-bg-color: #ffffff; /* White header background */
-    --header-text-color: #333; /* Dark text for header */
-    --link-color: #007bff; /* Blue links */
-    --link-hover-color: #0056b3; /* Darker blue on hover */
-    --button-bg-color: #007bff; /* Blue button */
-    --button-text-color: #ffffff; /* White button text */
-    --input-bg-color: #ffffff; /* White input background */
-    --input-border-color: #ccc; /* Gray input border */
-    --card-bg-color: #ffffff; /* White card background */
-    --card-border-color: #eee; /* Light gray card border */
-    --comment-bg-color: #f9f9f9; /* Light gray comment background */
-    --red-button-bg: #dc3545; /* Red for delete */
-    --green-button-bg: #28a745; /* Green for like (active) */
-    --gray-button-bg: #6c757d; /* Gray for like (inactive) */
+    --background-color: #f4f7f6;
+    --text-color: #333;
+    --header-bg-color: #ffffff;
+    --header-text-color: #333;
+    --link-color: #007bff;
+    --link-hover-color: #0056b3;
+    --button-bg-color: #007bff;
+    --button-text-color: #ffffff;
+    --input-bg-color: #ffffff;
+    --input-border-color: #ccc;
+    --card-bg-color: #ffffff;
+    --card-border-color: #eee;
+    --comment-bg-color: #f9f9f9;
+    --red-button-bg: #dc3545;
+    --green-button-bg: #28a745;
+    --gray-button-bg: #6c757d;
 }
 
-/* Dark theme overrides */
+/* Dark theme overrides (применяется, когда <body> имеет класс 'dark') */
 body.dark {
-    --background-color: #282c34; /* Dark gray background */
-    --text-color: #e0e0e0; /* Light gray text */
-    --header-bg-color: #363a42; /* Darker header background */
-    --header-text-color: #ffffff; /* White text for header */
-    --link-color: #8ab4f8; /* Lighter blue links */
-    --link-hover-color: #6a9ee8; /* Even lighter blue on hover */
-    --button-bg-color: #61dafb; /* Cyan button */
-    --button-text-color: #282c34; /* Dark text for button */
-    --input-bg-color: #3d414a; /* Darker input background */
-    --input-border-color: #555; /* Dark gray input border */
-    --card-bg-color: #363a42; /* Dark card background */
-    --card-border-color: #444; /* Darker gray card border */
-    --comment-bg-color: #4a4e58; /* Darker gray comment background */
-    --red-button-bg: #e74c3c; /* Brighter red */
-    --green-button-bg: #2ecc71; /* Brighter green */
-    --gray-button-bg: #7f8c8d; /* Slightly lighter gray */
+    --background-color: #282c34;
+    --text-color: #e0e0e0;
+    --header-bg-color: #363a42;
+    --header-text-color: #ffffff;
+    --link-color: #8ab4f8;
+    --link-hover-color: #6a9ee8;
+    --button-bg-color: #61dafb; /* Пример для кнопок в темной теме */
+    --button-text-color: #282c34;
+    --input-bg-color: #3d414a;
+    --input-border-color: #555;
+    --card-bg-color: #363a42;
+    --card-border-color: #444;
+    --comment-bg-color: #4a4e58;
+    --red-button-bg: #e74c3c;
+    --green-button-bg: #2ecc71;
+    --gray-button-bg: #7f8c8d;
 }
 
-/* Basic styling for body and elements to use variables */
+/* Общие стили для body */
 body {
     background-color: var(--background-color);
     color: var(--text-color);
     transition: background-color 0.3s ease, color 0.3s ease;
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* General styling for links, inputs, buttons (adjust as needed for your specific components) */
-a {
-    color: var(--link-color);
-    transition: color 0.3s ease;
+/* Общие стили для nav ul - Оставьте их, они правильные */
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px; /* Отступ между элементами списка */
 }
 
-a:hover {
-    color: var(--link-hover-color);
+/* Удалите этот пустой блок nav li {} */
+/* nav li { } */
+
+/* ИСПРАВЛЕНИЕ: ПЕРЕНЕСИТЕ СТИЛИ КНОПОК И ССЫЛОК В БОЛЕЕ ОБЩИЕ ПРАВИЛА ИЛИ ОТДЕЛЬНЫЕ КЛАССЫ */
+/* Здесь вы сбрасываете background и border, поэтому кнопки выглядят как текст */
+/* Если вы хотите, чтобы кнопки в навбаре выглядели как текст без фона и рамки,
+   тогда эти стили правильны, но тогда нужно будет настроить конкретные стили для кнопки переключения темы */
+/* Вариант 1: Если nav li a, nav li button - это просто ссылки-кнопки без фона */
+nav li a,
+nav li button {
+    display: block; /* Важно для padding */
+    color: var(--header-text-color); /* Используйте переменную из хедера */
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    background: none; /* Сброс фона, если хотите, чтобы они были прозрачными */
+    border: none; /* Сброс рамки */
+    cursor: pointer;
+    font-size: 1em; /* Использовать относительный размер, 1em = 16px по умолчанию */
+    transition: color 0.3s ease; /* Для плавного перехода цвета */
 }
 
+nav li a:hover,
+nav li button:hover {
+    color: var(--link-hover-color); /* Цвет при наведении */
+    /* background-color: rgba(255, 255, 255, 0.1); */ /* Добавьте легкий фон при наведении, если хотите */
+}
+
+/* Конкретный стиль для кнопки переключения темы (если она должна выглядеть как кнопка) */
+/* Если в Header.js она имеет класс 'theme-toggle-button' */
+/* ИЛИ Если вы не хотите, чтобы nav li button сбрасывала стили, тогда этот блок не нужен */
+nav li button[style*="border: 1px solid"] { /* Цепляемся за инлайн-стиль */
+    background-color: transparent !important; /* Убедитесь, что фон прозрачный */
+    border: 1px solid var(--header-text-color) !important;
+    color: var(--header-text-color) !important;
+    padding: 5px 10px !important;
+    border-radius: 5px !important;
+    font-size: 0.9em !important;
+}
+
+
+/* ... остальная часть ваших стилей ... */
+
+/* Общие стили для input, button и a (вне навигации) */
+/* Эти стили будут применяться к кнопкам и инпутам по всему приложению, если нет более специфичных правил */
 button {
     background-color: var(--button-bg-color);
     color: var(--button-text-color);
@@ -100,7 +121,17 @@ button {
 }
 
 button:hover {
-    filter: brightness(1.1); /* Slightly brighten on hover */
+    filter: brightness(1.1);
+}
+
+a {
+    color: var(--link-color);
+    text-decoration: none; /* Гарантируем отсутствие подчеркивания по умолчанию */
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--link-hover-color);
 }
 
 input[type="text"],
@@ -114,18 +145,4 @@ textarea {
     padding: 8px;
     border-radius: 4px;
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Specific button styles for EventDetailsPage/EventListPage */
-button[style*="background-color: rgb(220, 53, 69)"], /* Red */
-button[style*="background-color: #dc3545"] {
-    background-color: var(--red-button-bg) !important; /* Use !important to override inline styles if present */
-}
-button[style*="background-color: rgb(40, 167, 69)"], /* Green */
-button[style*="background-color: #28a745"] {
-    background-color: var(--green-button-bg) !important;
-}
-button[style*="background-color: rgb(108, 117, 125)"], /* Gray */
-button[style*="background-color: #6c757d"] {
-    background-color: var(--gray-button-bg) !important;
 }

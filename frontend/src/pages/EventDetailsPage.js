@@ -1,275 +1,88 @@
 // frontend/src/pages/EventDetailsPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { format } from 'date-fns';
-import { ru, enUS } from 'date-fns/locale';
 
-import {
-  fetchEventById,
-  deleteEvent,
-  toggleLikeEvent,
-  addEventComment,
-  deleteEventComment,
-} from '../redux/slices/eventsSlice';
+const EventDetailsPage = () => {
+    const { id } = useParams(); // Получаем ID события из URL
+    const [event, setEvent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const { t } = useTranslation();
+    const navigate = useNavigate();
 
-function EventDetailsPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { user } = useAuth();
-  const { t, i18n } = useTranslation();
+    useEffect(() => {
+        const fetchEvent = async () => {
+            try {
+                const response = await axios.get(`http://localhost:5001/api/events/${id}`);
+                setEvent(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error fetching event details:', err);
+                setError(t('failed_to_load_event_details'));
+                setLoading(false);
+                // Если событие не найдено, можно перенаправить на 404 или список
+                if (err.response && err.response.status === 404) {
+                    navigate('/events'); // Или '/404'
+                }
+            }
+        };
 
-  const event = useSelector((state) => state.events.currentEvent);
-  const status = useSelector((state) => state.events.status);
-  const error = useSelector((state) => state.events.error);
+        fetchEvent();
+    }, [id, t, navigate]);
 
-  const [commentText, setCommentText] = useState('');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  useEffect(() => {
-    dispatch(fetchEventById(id));
-  }, [dispatch, id]);
-
-  const formatLocalizedDateTime = (isoString) => {
-    if (!isoString) return '';
-    try {
-      const dateObj = new Date(isoString);
-      const locale = i18n.language === 'ru' ? ru : enUS;
-      return format(dateObj, 'PPPPp', { locale });
-    } catch (e) {
-      console.error('Error formatting date:', e);
-      return isoString; // Fallback
+    if (loading) {
+        return <p style={{ textAlign: 'center', marginTop: '50px' }}>{t('loading_event_details')}</p>;
     }
-  };
 
-  const handleDelete = async () => {
-    if (window.confirm(t('confirm_delete_event'))) {
-      await dispatch(deleteEvent(id));
-      if (status === 'succeeded') {
-        navigate('/events');
-      }
+    if (error) {
+        return <p style={{ color: 'var(--danger-color)', textAlign: 'center', marginTop: '50px' }}>{error}</p>;
     }
-    setShowDeleteConfirm(false);
-  };
 
-  const handleLike = async () => {
-    if (!user) {
-      alert(t('please_login_to_like'));
-      return;
+    if (!event) {
+        return <p style={{ textAlign: 'center', marginTop: '50px' }}>{t('event_not_found')}</p>;
     }
-    await dispatch(toggleLikeEvent(event._id));
-  };
 
-  const handleAddComment = async () => {
-    if (!user) {
-      alert(t('please_login_to_comment'));
-      return;
-    }
-    if (!commentText.trim()) {
-      alert(t('comment_cannot_be_empty'));
-      return;
-    }
-    await dispatch(addEventComment({ eventId: event._id, text: commentText }));
-    setCommentText('');
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    if (window.confirm(t('confirm_delete_comment'))) {
-      await dispatch(deleteEventComment({ eventId: event._id, commentId }));
-    }
-  };
-
-  if (status === 'loading') return <p style={{ color: 'var(--text-color)' }}>{t('loading_event_details')}</p>;
-  if (status === 'failed') return <p style={{ color: 'var(--red-button-bg)' }}>{error}</p>;
-  if (!event) return <p style={{ color: 'var(--text-color)' }}>{t('event_not_found')}</p>;
-
-  const userHasLiked = user && event.likes && event.likes.includes(user._id);
-
-  return (
-    <div style={{ color: 'var(--text-color)' }}>
-      <h2>{event.title}</h2>
-      <p><strong>{t('description_label')}</strong> {event.description}</p>
-      <p><strong>{t('date_label')}</strong> {formatLocalizedDateTime(event.date)}</p>
-      <p><strong>{t('location_label')}</strong> {event.location}</p>
-      <p><strong>{t('category_label')}</strong> {event.category}</p>
-      <p><strong>{t('creator_label')}</strong> {event.createdBy ? event.createdBy.name : t('unknown')}</p>
-
-      <div style={{ marginBottom: '15px' }}>
-        <button
-          onClick={handleLike}
-          disabled={!user}
-          style={{
-            backgroundColor: userHasLiked ? 'var(--green-button-bg)' : 'var(--gray-button-bg)',
-            color: 'var(--button-text-color)',
-            border: 'none',
-            padding: '10px 15px',
-            borderRadius: '5px',
-            cursor: user ? 'pointer' : 'not-allowed',
-            fontSize: '1em',
-            marginRight: '10px',
-            transition: 'background-color 0.3s ease, color 0.3s ease',
-          }}
-        >
-          {userHasLiked ? t('unlike') : t('like')}
-        </button>
-        <span style={{ fontSize: '1.1em', color: 'var(--text-color)' }}>
-          {t('likes_count', { count: event.likes ? event.likes.length : 0 })}
-        </span>
-      </div>
-
-      {(user && event.createdBy && user._id === event.createdBy._id) || (user && user.role === 'admin') ? (
-        <div style={{ marginTop: '20px' }}>
-          <button
-            onClick={() => navigate(`/create-event?editId=${event._id}`)}
-            style={{
-              backgroundColor: 'var(--yellow-button-bg)',
-              color: 'var(--button-text-color)',
-              border: 'none',
-              padding: '10px 15px',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              marginRight: '10px',
-              transition: 'background-color 0.3s ease, color 0.3s ease',
-            }}
-          >
-            {t('edit_event')}
-          </button>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            style={{
-              backgroundColor: 'var(--red-button-bg)',
-              color: 'var(--button-text-color)',
-              border: 'none',
-              padding: '10px 15px',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              transition: 'background-color 0.3s ease, color 0.3s ease',
-            }}
-          >
-            {t('delete_event')}
-          </button>
-          {showDeleteConfirm && (
-            <div style={{ marginTop: '10px', padding: '10px', border: '1px solid var(--red-button-bg)', borderRadius: '5px', backgroundColor: 'var(--card-bg-color)' }}>
-              <p>{t('are_you_sure_delete_event')}</p>
-              <button
-                onClick={handleDelete}
-                style={{
-                  backgroundColor: 'var(--red-button-bg)',
-                  color: 'var(--button-text-color)',
-                  border: 'none',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  marginRight: '10px',
-                }}
-              >
-                {t('yes_delete')}
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                style={{
-                  backgroundColor: 'var(--gray-button-bg)',
-                  color: 'var(--button-text-color)',
-                  border: 'none',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                {t('cancel')}
-              </button>
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      {/* Comments Section */}
-      <div style={{ marginTop: '25px', borderTop: '1px solid var(--card-border-color)', paddingTop: '15px' }}>
-        <h3>{t('comments_section')}</h3>
-        {event.comments && event.comments.length > 0 ? (
-          <ul style={{ listStyleType: 'none', padding: '0' }}>
-            {event.comments.map((comment) => (
-              <li key={comment._id} style={{
-                fontSize: '0.95em',
-                borderBottom: '1px dotted var(--card-border-color)',
-                padding: '8px 0',
-                marginBottom: '8px',
-                backgroundColor: 'var(--comment-bg-color)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderRadius: '4px',
-                paddingLeft: '10px',
-              }}>
-                <div>
-                  <strong style={{ color: 'var(--text-color)' }}>{comment.user ? comment.user.name : t('unknown')}:</strong> <span style={{ color: 'var(--text-color)' }}>{comment.text}</span>
-                  <br />
-                  <small style={{ color: 'var(--text-color)', fontSize: '0.8em' }}>{formatLocalizedDateTime(comment.createdAt)}</small>
-                </div>
-                {user && (comment.user._id === user._id || user.role === 'admin') && (
-                  <button
-                    onClick={() => handleDeleteComment(comment._id)}
-                    style={{
-                      backgroundColor: 'var(--red-button-bg)',
-                      color: 'var(--button-text-color)',
-                      border: 'none',
-                      padding: '5px 10px',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '0.75em',
-                      marginRight: '5px',
-                    }}
-                  >
-                    {t('delete_comment')}
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p style={{ color: 'var(--text-color)' }}>{t('no_comments_yet')}</p>
-        )}
-
-        {/* Add Comment Form */}
-        {user && (
-          <div style={{ display: 'flex', marginTop: '15px' }}>
-            <input
-              type="text"
-              placeholder={t('write_a_comment')}
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              style={{
-                flexGrow: 1,
-                padding: '10px',
-                borderRadius: '5px',
-                border: '1px solid var(--input-border-color)',
-                backgroundColor: 'var(--input-bg-color)',
-                color: 'var(--text-color)',
-              }}
-            />
-            <button
-              onClick={handleAddComment}
-              style={{
-                marginLeft: '10px',
+    return (
+        <div style={{
+            padding: '20px',
+            maxWidth: '800px',
+            margin: '20px auto',
+            backgroundColor: 'var(--card-bg-color)',
+            border: '1px solid var(--card-border-color)',
+            borderRadius: '8px',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+            transition: 'background-color 0.3s ease, border-color 0.3s ease'
+        }}>
+            <h1 style={{ color: 'var(--text-color)', marginBottom: '20px' }}>{event.title}</h1>
+            <p style={{ color: 'var(--text-color)', lineHeight: '1.6' }}>{event.description}</p>
+            <p style={{ color: 'var(--secondary-color)', marginTop: '15px' }}>
+                <strong>{t('event_date_time')}:</strong> {new Date(event.date).toLocaleDateString()} {new Date(event.date).toLocaleTimeString()}
+            </p>
+            <p style={{ color: 'var(--secondary-color)' }}>
+                <strong>{t('event_location')}:</strong> {event.location}
+            </p>
+            <p style={{ color: 'var(--secondary-color)' }}>
+                <strong>{t('event_category')}:</strong> {event.category}
+            </p>
+            {/* Здесь вы можете добавить кнопки для редактирования/удаления (для админов/создателя)
+                или секцию комментариев/лайков */}
+            <button onClick={() => navigate('/events')} style={{
+                marginTop: '30px',
+                padding: '10px 20px',
                 backgroundColor: 'var(--button-bg-color)',
                 color: 'var(--button-text-color)',
                 border: 'none',
-                padding: '10px 15px',
                 borderRadius: '5px',
                 cursor: 'pointer',
                 fontSize: '1em',
-              }}
-            >
-              {t('send')}
+                transition: 'background-color 0.3s ease'
+            }}>
+                {t('back_to_events')}
             </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+        </div>
+    );
+};
 
 export default EventDetailsPage;

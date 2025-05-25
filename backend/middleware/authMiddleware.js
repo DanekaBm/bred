@@ -40,11 +40,12 @@ const protect = async (req, res, next) => {
     }
 };
 
-// Middleware для авторизации по ролям
+// НОВАЯ ФУНКЦИЯ ДЛЯ ПРОВЕРКИ РОЛИ
 const authorizeRoles = (...roles) => {
     return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({ message: `Доступ запрещен. Требуется роль: ${req.user ? req.user.role : 'none'} (ожидалась: ${roles.join(', ')})` });
+        if (!roles.includes(req.user.role)) {
+            res.status(403); // 403 Forbidden - доступ запрещен
+            throw new Error(`Пользователь с ролью ${req.user.role} не имеет доступа к этому маршруту`);
         }
         next();
     };
