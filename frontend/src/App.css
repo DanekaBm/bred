@@ -1,0 +1,96 @@
+.App {
+  text-align: center;
+}
+
+/* Updated nav styles to be compatible with flexbox and theme variables */
+nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  /* The background-color for nav is now handled by the header's primary-color */
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-start; /* Align main nav items to the start */
+  align-items: center;
+  gap: 20px; /* Spacing between main nav items */
+}
+
+/* REMOVE THIS LINE: 'float: left;' - it conflicts with flexbox */
+nav li {
+  /* float: left; */ /* REMOVE THIS LINE */
+}
+
+nav li a, nav li button {
+  display: block;
+  color: inherit; /* Inherit from Header's color, then overridden by LanguageSwitcher/ThemeSwitcher inline styles */
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+nav li a:hover, nav li button:hover {
+  background-color: #575757; /* Consider using a CSS variable here too */
+}
+
+.content {
+  padding: 20px;
+  max-width: 800px;
+  margin: 20px auto;
+  background-color: var(--background-color); /* Use theme variable */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"],
+form input[type="datetime-local"],
+form textarea {
+  padding: 10px;
+  border: 1px solid var(--text-color); /* Use theme variable for border */
+  border-radius: 4px;
+  font-size: 16px;
+  background-color: var(--background-color); /* Use theme variable */
+  color: var(--text-color); /* Use theme variable */
+}
+
+form button {
+  padding: 10px 15px;
+  background-color: var(--primary-color); /* Use theme variable */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+form button:hover {
+  background-color: var(--accent-color); /* Use theme variable */
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  background-color: var(--background-color); /* Use theme variable */
+  margin-bottom: 10px;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--text-color); /* Use theme variable for border */
+  text-align: left;
+}
