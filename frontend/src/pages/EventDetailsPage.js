@@ -3,14 +3,28 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { format } from 'date-fns';
+import { ru, enUS } from 'date-fns/locale';
 
 const EventDetailsPage = () => {
-    const { id } = useParams(); // Получаем ID события из URL
+    const { id } = useParams();
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+
+    const formatLocalizedDateTime = (isoString) => {
+        if (!isoString) return '';
+        try {
+            const dateObj = new Date(isoString);
+            const locale = i18n.language === 'ru' ? ru : enUS;
+            return format(dateObj, 'PPPPp', { locale });
+        } catch (e) {
+            console.error("Error formatting date:", e);
+            return isoString;
+        }
+    };
 
     useEffect(() => {
         const fetchEvent = async () => {
@@ -22,9 +36,8 @@ const EventDetailsPage = () => {
                 console.error('Error fetching event details:', err);
                 setError(t('failed_to_load_event_details'));
                 setLoading(false);
-                // Если событие не найдено, можно перенаправить на 404 или список
                 if (err.response && err.response.status === 404) {
-                    navigate('/events'); // Или '/404'
+                    navigate('/events');
                 }
             }
         };
@@ -55,10 +68,25 @@ const EventDetailsPage = () => {
             boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
             transition: 'background-color 0.3s ease, border-color 0.3s ease'
         }}>
+            {/* ДОБАВЛЕННЫЙ БЛОК ДЛЯ ОТОБРАЖЕНИЯ ИЗОБРАЖЕНИЯ */}
+            {event.image && (
+                <img
+                    src={`http://localhost:5001${event.image}`} // Полный URL к изображению
+                    alt={event.title}
+                    style={{
+                        width: '100%',
+                        maxHeight: '400px', // Максимальная высота
+                        objectFit: 'cover',
+                        borderRadius: '8px', // Скруглить углы
+                        marginBottom: '20px'
+                    }}
+                />
+            )}
+
             <h1 style={{ color: 'var(--text-color)', marginBottom: '20px' }}>{event.title}</h1>
             <p style={{ color: 'var(--text-color)', lineHeight: '1.6' }}>{event.description}</p>
             <p style={{ color: 'var(--secondary-color)', marginTop: '15px' }}>
-                <strong>{t('event_date_time')}:</strong> {new Date(event.date).toLocaleDateString()} {new Date(event.date).toLocaleTimeString()}
+                <strong>{t('event_date_time')}:</strong> {formatLocalizedDateTime(event.date)}
             </p>
             <p style={{ color: 'var(--secondary-color)' }}>
                 <strong>{t('event_location')}:</strong> {event.location}
@@ -66,8 +94,10 @@ const EventDetailsPage = () => {
             <p style={{ color: 'var(--secondary-color)' }}>
                 <strong>{t('event_category')}:</strong> {event.category}
             </p>
-            {/* Здесь вы можете добавить кнопки для редактирования/удаления (для админов/создателя)
-                или секцию комментариев/лайков */}
+            <p style={{ color: 'var(--secondary-color)' }}>
+                <strong>{t('organizer')}:</strong> {event.organizer}
+            </p>
+
             <button onClick={() => navigate('/events')} style={{
                 marginTop: '30px',
                 padding: '10px 20px',

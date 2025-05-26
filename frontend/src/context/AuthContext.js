@@ -33,15 +33,10 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             // Отправляем учетные данные. Бэкенд установит токен в Set-Cookie И ВЕРНЕТ ДАННЫЕ ПОЛЬЗОВАТЕЛЯ.
-            // const res = await API.post('/auth/login', { email, password }); // <-- ИЗМЕНЕНО: теперь получаем ответ
-            const { data } = await API.post('/auth/login', { email, password }); // <-- Правильно деструктурируем 'data'
+            const { data } = await API.post('/auth/login', { email, password });
 
             // Устанавливаем данные пользователя, которые пришли непосредственно из ответа на логин
-            setUser(data); // <-- ИСПОЛЬЗУЕМ ДАННЫЕ ИЗ ПЕРВОГО ОТВЕТА
-
-            // УДАЛЯЕМ ЭТОТ ВТОРОЙ ЗАПРОС, ТАК КАК ОН НЕ НУЖЕН И ВЫЗЫВАЕТ ПРОБЛЕМУ СО ВРЕМЕНЕМ!
-            // const userRes = await API.get('/auth/profile');
-            // setUser(userRes.data);
+            setUser(data);
 
             return true; // Успешный вход
         } catch (error) {
@@ -49,7 +44,6 @@ export const AuthProvider = ({ children }) => {
             throw new Error(error.response?.data?.message || 'Ошибка входа');
         }
     };
-
 
     const register = async (name, email, password) => {
         try {
@@ -111,7 +105,7 @@ export const AuthProvider = ({ children }) => {
     const value = {
         user,
         loading,
-        isAdmin,
+        isAdmin, // Предоставляем флаг isAdmin
         login,
         register,
         logout,

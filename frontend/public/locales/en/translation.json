@@ -129,5 +129,6 @@
   "write_a_comment": "Write a comment...",
   "yes_confirm": "Yes, Confirm",
   "your_email": "Your Email",
-  "your_name": "Your Name"
+  "your_name": "Your Name",
+  "user_management" : "User Management"
 }

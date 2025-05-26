@@ -1,57 +1,28 @@
 // backend/controllers/eventController.js
 const asyncHandler = require('express-async-handler');
 const Event = require('../models/Event');
-const User = require('../models/User');
+const User = require('../models/User'); // Убедитесь, что эта строка есть, хотя она не используется напрямую здесь, но это хорошая практика
 
 // @desc    Получить все события
 // @route   GET /api/events
 // @access  Public
 const getEvents = asyncHandler(async (req, res) => {
-    // Параметры для пагинации
-    const pageSize = parseInt(req.query.limit) || 10;
-    const page = parseInt(req.query.page) || 1;
-
-    // Параметры для поиска по ключевому слову (title, description, location, category)
-    const keyword = req.query.keyword ? {
-        $or: [
-            { title: { $regex: req.query.keyword, $options: 'i' } },
-            { description: { $regex: req.query.keyword, $options: 'i' } },
-            { location: { $regex: req.query.keyword, $options: 'i' } },
-            { category: { $regex: req.query.keyword, $options: 'i' } },
-        ]
-    } : {};
-
-    // Параметры для фильтрации по категории (если не используется keyword)
-    const categoryFilter = req.query.category && !req.query.keyword ? { category: req.query.category } : {};
-
-    // Параметры для сортировки
-    const sort = req.query.sort || 'createdAt';
-    const order = req.query.order === 'asc' ? 1 : -1;
-
-    const count = await Event.countDocuments({ ...keyword, ...categoryFilter });
-    const events = await Event.find({ ...keyword, ...categoryFilter })
-        .populate('createdBy', 'name email')
-        .populate('comments.user', 'name')
-        .sort({ [sort]: order })
-        .limit(pageSize)
-        .skip(pageSize * (page - 1));
-
-    res.json({
-        events,
-        page,
-        pages: Math.ceil(count / pageSize),
-        total: count
-    });
+    // Добавлен populate для 'createdBy' и 'comments.user'
+    const events = await Event.find({})
+        .populate('createdBy', 'name email') // Заполняет информацию о создателе события
+        .populate('comments.user', 'name'); // Заполняет информацию о пользователе, оставившем комментарий
+    res.json({ events });
 });
 
 // @desc    Получить событие по ID
 // @route   GET /api/events/:id
 // @access  Public
 const getEventById = asyncHandler(async (req, res) => {
+    // Добавлен populate для 'createdBy', 'likes' и 'comments.user'
     const event = await Event.findById(req.params.id)
-        .populate('createdBy', 'name email')
-        .populate('likes', 'name')
-        .populate('comments.user', 'name');
+        .populate('createdBy', 'name email') // Заполняет информацию о создателе события
+        .populate('likes', 'name email')    // Заполняет информацию о пользователях, которые поставили лайк
+        .populate('comments.user', 'name'); // Заполняет информацию о пользователе, оставившем комментарий
 
     if (event) {
         res.json(event);
@@ -65,7 +36,7 @@ const getEventById = asyncHandler(async (req, res) => {
 // @route   POST /api/events
 // @access  Private (требует JWT)
 const createEvent = asyncHandler(async (req, res) => {
-    const { title, description, date, location, category } = req.body;
+    const { title, description, date, location, category, image, organizer } = req.body;
 
     const event = new Event({
         title,
@@ -73,18 +44,23 @@ const createEvent = asyncHandler(async (req, res) => {
         date,
         location,
         category,
+        image,
+        organizer,
         createdBy: req.user._id
     });
 
     const createdEvent = await event.save();
-    res.status(201).json(createdEvent);
+    // Возвращаем созданное событие, заполняя создателя, чтобы фронтенд получил полное имя
+    const populatedEvent = await Event.findById(createdEvent._id)
+        .populate('createdBy', 'name email');
+    res.status(201).json(populatedEvent);
 });
 
 // @desc    Обновить событие
 // @route   PUT /api/events/:id
 // @access  Private (только создатель события или админ)
 const updateEvent = asyncHandler(async (req, res) => {
-    const { title, description, date, location, category } = req.body;
+    const { title, description, date, location, category, image, organizer } = req.body;
 
     const event = await Event.findById(req.params.id);
 
@@ -99,9 +75,16 @@ const updateEvent = asyncHandler(async (req, res) => {
         event.date = date || event.date;
         event.location = location || event.location;
         event.category = category || event.category;
+        event.image = image !== undefined ? image : event.image;
+        event.organizer = organizer || event.organizer;
 
         const updatedEvent = await event.save();
-        res.json(updatedEvent);
+        // Возвращаем обновленное событие с populate, чтобы фронтенд получил полные данные
+        const populatedEvent = await Event.findById(updatedEvent._id)
+            .populate('createdBy', 'name email')
+            .populate('likes', 'name email')
+            .populate('comments.user', 'name');
+        res.json(populatedEvent);
     } else {
         res.status(404);
         throw new Error('Событие не найдено');
@@ -119,8 +102,7 @@ const deleteEvent = asyncHandler(async (req, res) => {
             res.status(403);
             throw new Error('Недостаточно прав для удаления этого события');
         }
-
-        await event.deleteOne();
+        await Event.deleteOne({ _id: req.params.id });
         res.json({ message: 'Событие удалено' });
     } else {
         res.status(404);
@@ -128,27 +110,37 @@ const deleteEvent = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Поставить/убрать лайк событию
+// @desc    Лайкнуть событие
 // @route   POST /api/events/:id/like
 // @access  Private
 const likeEvent = asyncHandler(async (req, res) => {
     const event = await Event.findById(req.params.id);
-    if (!event) {
+
+    if (event) {
+        // Проверяем, есть ли уже лайк от текущего пользователя
+        if (event.likes.includes(req.user._id)) {
+            // Если лайк есть, удаляем его
+            event.likes = event.likes.filter(
+                (userId) => userId.toString() !== req.user._id.toString()
+            );
+        } else {
+            // Если лайка нет, добавляем его
+            event.likes.push(req.user._id);
+        }
+        await event.save(); // Сохраняем изменения в событии
+
+        // После сохранения, получаем обновленное событие с заполненными данными
+        const updatedEvent = await Event.findById(req.params.id)
+            .populate('createdBy', 'name email')
+            .populate('likes', 'name email') // Заполняем данные пользователей, которые поставили лайк
+            .populate('comments.user', 'name'); // Заполняем данные пользователей в комментариях
+
+        // Отправляем обновленное событие фронтенду
+        res.json({ message: 'Лайк обновлен', event: updatedEvent });
+    } else {
         res.status(404);
         throw new Error('Событие не найдено');
     }
-
-    const userId = req.user._id;
-    const hasLiked = event.likes.includes(userId);
-
-    if (hasLiked) {
-        event.likes = event.likes.filter(id => id.toString() !== userId.toString());
-    } else {
-        event.likes.push(userId);
-    }
-
-    await event.save();
-    res.json({ message: 'Лайк обновлен', likes: event.likes });
 });
 
 // @desc    Добавить комментарий к событию
@@ -156,67 +148,69 @@ const likeEvent = asyncHandler(async (req, res) => {
 // @access  Private
 const addComment = asyncHandler(async (req, res) => {
     const { text } = req.body;
-    if (!text || text.trim() === '') {
-        res.status(400);
-        throw new Error('Текст комментария не может быть пустым');
-    }
-
     const event = await Event.findById(req.params.id);
-    if (!event) {
+
+    if (event) {
+        const comment = {
+            user: req.user._id,
+            name: req.user.name, // Это поле не нужно в схеме, если вы заполняете 'user'
+            text,
+        };
+        event.comments.push(comment);
+        await event.save(); // Сохраняем новый комментарий
+
+        // После сохранения, получаем обновленное событие с заполненными данными
+        const updatedEvent = await Event.findById(req.params.id)
+            .populate('createdBy', 'name email')
+            .populate('likes', 'name email')
+            .populate('comments.user', 'name'); // Обязательно заполните пользователя комментария
+
+        // Отправляем все обновленное событие, чтобы фронтенд мог обновить его целиком
+        res.status(201).json({ message: 'Комментарий добавлен', event: updatedEvent });
+    } else {
         res.status(404);
         throw new Error('Событие не найдено');
     }
-
-    const newComment = {
-        user: req.user._id,
-        text: text,
-    };
-
-    event.comments.push(newComment);
-    await event.save();
-
-    const updatedEvent = await Event.findById(req.params.id)
-        .populate('comments.user', 'name');
-
-    const lastComment = updatedEvent.comments[updatedEvent.comments.length - 1];
-
-    res.status(201).json({ message: 'Комментарий добавлен', comment: lastComment });
 });
 
 // @desc    Удалить комментарий к событию
-// @route   DELETE /api/events/:eventId/comment/:commentId
+// @route   DELETE /api/events/:eventId/comments/:commentId
 // @access  Private (только автор комментария или админ)
 const deleteComment = asyncHandler(async (req, res) => {
-    const { eventId, commentId } = req.params;
+    const event = await Event.findById(req.params.eventId);
 
-    const event = await Event.findById(eventId);
+    if (event) {
+        // Находим комментарий по ID поддокумента
+        const comment = event.comments.id(req.params.commentId);
 
-    if (!event) {
+        if (!comment) {
+            res.status(404);
+            throw new Error('Комментарий не найден');
+        }
+
+        // Проверяем права на удаление: автор комментария или админ
+        if (comment.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+            res.status(403);
+            throw new Error('Недостаточно прав для удаления этого комментария');
+        }
+
+        // Удаляем комментарий (для Mongoose 6+ используем deleteOne())
+        comment.deleteOne();
+        await event.save(); // Сохраняем событие после удаления комментария
+
+        // После сохранения, получаем обновленное событие с заполненными данными
+        const updatedEvent = await Event.findById(req.params.eventId)
+            .populate('createdBy', 'name email')
+            .populate('likes', 'name email')
+            .populate('comments.user', 'name');
+
+        // Отправляем обновленное событие фронтенду
+        res.json({ message: 'Комментарий удален', event: updatedEvent });
+    } else {
         res.status(404);
         throw new Error('Событие не найдено');
     }
-
-    // Находим комментарий по ID
-    const comment = event.comments.id(commentId);
-
-    if (!comment) {
-        res.status(404);
-        throw new Error('Комментарий не найден');
-    }
-
-    // Проверяем, является ли текущий пользователь автором комментария или администратором
-    if (comment.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-        res.status(403);
-        throw new Error('Недостаточно прав для удаления этого комментария');
-    }
-
-    // Удаляем комментарий из массива
-    comment.deleteOne(); // Используем deleteOne() для вложенного документа
-    await event.save();
-
-    res.json({ message: 'Комментарий удален' });
 });
-
 
 module.exports = {
     getEvents,
@@ -226,5 +220,5 @@ module.exports = {
     deleteEvent,
     likeEvent,
     addComment,
-    deleteComment, // Экспортируем новую функцию
+    deleteComment,
 };

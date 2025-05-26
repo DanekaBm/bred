@@ -1,30 +1,12 @@
 // backend/models/Event.js
 const mongoose = require('mongoose');
 
-// Отдельная схема для комментариев для лучшей организации
-const commentSchema = mongoose.Schema(
-    {
-        user: { // Кто оставил комментарий
-            type: mongoose.Schema.Types.ObjectId,
-            required: true,
-            ref: 'User', // Ссылка на модель User
-        },
-        text: { // Текст комментария
-            type: String,
-            required: true,
-        },
-    },
-    {
-        timestamps: true, // Добавляет createdAt и updatedAt для комментария
-    }
-);
-
 const eventSchema = mongoose.Schema(
     {
         title: {
             type: String,
             required: true,
-            trim: true, // Обрезает пробелы в начале/конце строки
+            trim: true,
         },
         description: {
             type: String,
@@ -45,21 +27,50 @@ const eventSchema = mongoose.Schema(
             required: true,
             trim: true,
         },
-        createdBy: { // Кто создал событие
+        image: {
+            type: String, // Хранит относительный URL (например, /uploads/my_image.jpg)
+            default: '',
+        },
+        organizer: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,
             ref: 'User',
         },
-        likes: [ // Массив ID пользователей, которые лайкнули событие
+        likes: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'User',
             },
         ],
-        comments: [commentSchema], // Массив комментариев, используем вложенную схему
+        comments: [
+            {
+                user: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    required: true,
+                    ref: 'User',
+                },
+                name: {
+                    type: String,
+                    required: true,
+                },
+                text: {
+                    type: String,
+                    required: true,
+                },
+                createdAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+            },
+        ],
     },
     {
-        timestamps: true, // Добавляет createdAt и updatedAt для самого события
+        timestamps: true,
     }
 );
 

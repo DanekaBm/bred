@@ -1,14 +1,13 @@
-// src/components/Header.js
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../context/ThemeContext'; // Import useTheme hook
+import { useTheme } from '../context/ThemeContext';
 
 function Header() {
     const { user, logout } = useAuth();
     const { t, i18n } = useTranslation();
-    const { theme, toggleTheme } = useTheme(); // Use the theme context
+    const { theme, toggleTheme } = useTheme();
 
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
@@ -24,8 +23,8 @@ function Header() {
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: '15px 20px',
-            backgroundColor: 'var(--header-bg-color)', /* Use CSS variable */
-            color: 'var(--header-text-color)',      /* Use CSS variable */
+            backgroundColor: 'var(--header-bg-color)',
+            color: 'var(--header-text-color)',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             transition: 'background-color 0.3s ease, color 0.3s ease'
         }}>
@@ -35,11 +34,17 @@ function Header() {
                 </Link>
             </div>
             <nav>
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex' }}>
+                <ul style={{
+                    listStyle: 'none',
+                    margin: 0,
+                    padding: 0,
+                    display: 'flex',
+                    flexWrap: 'wrap',       // <-- ДОБАВЛЕНО/ИСПРАВЛЕНО
+                    justifyContent: 'flex-end' // <-- ДОБАВЛЕНО/ИСПРАВЛЕНО
+                }}>
                     <li style={{ marginLeft: '20px' }}><Link to="/events" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('events')}</Link></li>
                     {user ? (
                         <>
-                            <li style={{ marginLeft: '20px' }}><Link to="/create-event" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('create_event')}</Link></li>
                             <li style={{ marginLeft: '20px' }}><Link to="/profile" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('profile')}</Link></li>
                             {user.role === 'admin' && (
                                 <li style={{ marginLeft: '20px' }}><Link to="/admin" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('admin_dashboard')}</Link></li>

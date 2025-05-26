@@ -1,4 +1,3 @@
-// backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); // Подключаем модель пользователя
 
@@ -26,6 +25,8 @@ const protect = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // Находим пользователя по ID, извлеченному из токена, и исключаем пароль
+        // Примечание: req.user будет содержать только ID и роль, если они были в токене
+        // Для получения полной информации о пользователе из БД:
         req.user = await User.findById(decoded.id).select('-password');
 
         // Если пользователь не найден, токен недействителен (или ID в токене не соответствует пользователю)
@@ -40,14 +41,15 @@ const protect = async (req, res, next) => {
     }
 };
 
-// НОВАЯ ФУНКЦИЯ ДЛЯ ПРОВЕРКИ РОЛИ
+// Middleware для проверки роли пользователя
 const authorizeRoles = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            res.status(403); // 403 Forbidden - доступ запрещен
-            throw new Error(`Пользователь с ролью ${req.user.role} не имеет доступа к этому маршруту`);
+        // req.user должен быть установлен middleware 'protect'
+        if (!req.user || !roles.includes(req.user.role)) {
+            // 403 Forbidden - доступ запрещен
+            return res.status(403).json({ message: `Доступ запрещен. Пользователь с ролью ${req.user ? req.user.role : 'неизвестно'} не имеет прав.` });
         }
-        next();
+        next(); // Если роль пользователя разрешена, передаем управление дальше
     };
 };
 
