@@ -290,5 +290,21 @@
   "ticket_purchase_success_message": "You successfully purchased {{count}} ticket(s) for \"{{eventTitle}}\".",
   "search_by_title": "Search by title",
   "sort_asc": "Sort: А-Я, A-Z",
-  "sort_desc": "Sort: Z-A, Я-А"
+  "sort_desc": "Sort: Z-A, Я-А",
+  "admin_notifications_page_title": "Admin Notifications",
+  "no_new_notifications": "No new notifications.",
+  "user_liked_event": "{{userName}} liked your event \"{{eventTitle}}\"",
+  "user_disliked_event": "{{userName}} disliked your event \"{{eventTitle}}\"",
+  "user_commented_on_event": "{{userName}} commented on your event \"{{eventTitle}}\": \"{{commentText}}\"",
+  "view_event": "View Event",
+  "from": "From",
+  "filter_by_price": "Filter by Price",
+  "all_prices": "All Prices",
+  "up_to_1000": "Up to 1000",
+  "over_1001": "Over 1001",
+  "filter_by_tickets": "Filter by Tickets",
+  "all_tickets": "All Tickets",
+  "up_to_50": "Up to 50",
+  "over_51": "Over 51",
+  "error_loading_events": "Error loading events"
 }

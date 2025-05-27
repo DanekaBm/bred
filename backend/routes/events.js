@@ -12,6 +12,7 @@ const {
     addComment,
     deleteComment,
     getFeaturedEvents,
+    getAdminNotifications,
 } = require('../controllers/eventController');
 const { protect } = require('../middleware/authMiddleware');
 const { buyTickets } = require('../controllers/ticketController');
@@ -19,7 +20,9 @@ const { buyTickets } = require('../controllers/ticketController');
 
 router.get('/featured', getFeaturedEvents);
 
-// Изменения: удалены upload.single('image')
+// --- ВАЖНОЕ ИЗМЕНЕНИЕ: Этот маршрут должен быть ПЕРЕД router.route('/:id') ---
+router.get('/admin-notifications', protect, getAdminNotifications);
+
 router.route('/').get(getEvents).post(protect, createEvent);
 router.route('/:id').get(getEventById).put(protect, updateEvent).delete(protect, deleteEvent);
 

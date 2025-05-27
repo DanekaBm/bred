@@ -14,6 +14,7 @@ import EventDetailsPage from './pages/EventDetailsPage';
 import AdminUserListPage from './pages/AdminUserListPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import AdminManageEventsPage from './pages/AdminManageEventsPage';
+import AdminNotificationsPage from './pages/AdminNotificationsPage';
 import MyTicketsPage from "./pages/MyTicketsPage";
 import Header from './layouts/Header';
 
@@ -54,6 +55,7 @@ function AppContent() {
                                     <Route path="/admin" element={<AdminPanelPage />} />
                                     <Route path="/admin/users" element={<AdminUserListPage />} />
                                     <Route path="/admin/events" element={<AdminManageEventsPage />} />
+                                    <Route path="/admin/notifications" element= {<AdminNotificationsPage />} />
                                 </>
                             )}
                         </>

@@ -290,5 +290,21 @@
   "ticket_purchase_success_message": "Вы успешно купили {{count}} билет(ов) на \"{{eventTitle}}\".",
   "search_by_title": "Поиск по названию",
   "sort_asc": "Sort: А-Я, A-Z",
-  "sort_desc": "Sort: Z-A, Я-А"
+  "sort_desc": "Sort: Z-A, Я-А",
+  "admin_notifications_page_title": "Уведомления администратора",
+  "no_new_notifications": "Новых уведомлений нет.",
+  "user_liked_event": "{{userName}} лайкнул ваше событие \"{{eventTitle}}\"",
+  "user_disliked_event": "{{userName}} дизлайкнул ваше событие \"{{eventTitle}}\"",
+  "user_commented_on_event": "{{userName}} прокомментировал ваше событие \"{{eventTitle}}\": \"{{commentText}}\"",
+  "view_event": "Посмотреть событие",
+  "from": "От",
+  "filter_by_price": "Фильтровать по цене",
+  "all_prices": "Все цены",
+  "up_to_1000": "До 1000",
+  "over_1001": "Больше 1001",
+  "filter_by_tickets": "Фильтровать по билетам",
+  "all_tickets": "Все билеты",
+  "up_to_50": "До 50",
+  "over_51": "Больше 51",
+  "error_loading_events": "Ошибка загрузки событий"
 }

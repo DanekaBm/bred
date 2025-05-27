@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,9 @@ function EventListPage() {
     // Состояния для сортировки и поиска
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOrder, setSortOrder] = useState('asc'); // 'asc' для А-Я, 'desc' для Я-А
+    const [priceFilter, setPriceFilter] = useState('');
+    const [ticketsFilter, setTicketsFilter] = useState('');
+
 
     const formatLocalizedDateTime = (isoString) => {
         if (!isoString) return '';
@@ -36,6 +39,23 @@ function EventListPage() {
             dispatch(fetchAllEvents());
         }
     }, [eventsStatus, dispatch]);
+
+    const handleFetchEvents = useCallback(() => {
+        const params = {
+            priceRange: priceFilter,
+            ticketsRange: ticketsFilter,
+            // Сортировка (sortOrder) будет обрабатываться на фронтенде после получения данных,
+            // если вы не хотите передавать ее на бэкенд для запроса к БД.
+            // Если нужно, добавьте 'sortOrder' в params и обработайте на бэкенде.
+        };
+        dispatch(fetchAllEvents(params));
+    }, [dispatch, priceFilter, ticketsFilter]); // Зависимости для useCallback
+
+    useEffect(() => {
+        // Загружаем события при первом рендере и при изменении фильтров/поиска
+        handleFetchEvents();
+    }, [handleFetchEvents]); // Зависимость от мемоизированной функции
+
 
     // Логика фильтрации и сортировки событий
     const filteredAndSortedEvents = useMemo(() => {
@@ -101,7 +121,53 @@ function EventListPage() {
                     <option value="desc">{t('sort_desc')}</option>
                 </select>
             </div>
-            {/* Конец блока поиска и сортировки */}
+
+            {/* Фильтр по цене */}
+            <div>
+                <label htmlFor="priceFilter" style={{ marginRight: '10px', color: 'var(--text-color)' }}>
+                    {t('filter_by_price')}:
+                </label>
+                <select
+                    id="priceFilter"
+                    value={priceFilter}
+                    onChange={(e) => setPriceFilter(e.target.value)}
+                    style={{
+                        padding: '8px',
+                        borderRadius: '5px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--input-bg-color)',
+                        color: 'var(--text-color)',
+                    }}
+                >
+                    <option value="">{t('all_prices')}</option>
+                    <option value="upTo1000">{t('up_to_1000')}</option>
+                    <option value="over1001">{t('over_1001')}</option>
+                </select>
+            </div>
+
+            {/* Фильтр по количеству билетов */}
+            <div>
+                <label htmlFor="ticketsFilter" style={{ marginRight: '10px', color: 'var(--text-color)' }}>
+                    {t('filter_by_tickets')}:
+                </label>
+                <select
+                    id="ticketsFilter"
+                    value={ticketsFilter}
+                    onChange={(e) => setTicketsFilter(e.target.value)}
+                    style={{
+                        padding: '8px',
+                        borderRadius: '5px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--input-bg-color)',
+                        color: 'var(--text-color)',
+                    }}
+                >
+                    <option value="">{t('all_tickets')}</option>
+                    <option value="upTo50">{t('up_to_50')}</option>
+                    <option value="over51">{t('over_51')}</option>
+                </select>
+            </div>
+    {/* Конец блока поиска и сортировки */}
 
             {filteredAndSortedEvents.length === 0 ? (
                 <p>{t('no_events_found')}</p>

@@ -3,15 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
-// import { FaBell } from 'react-icons/fa'; // УДАЛЕНО: Импорт иконки колокольчика
+import { FaBell } from 'react-icons/fa'; // <-- Добавлен импорт иконки колокольчика
 
 const Header = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const { theme, toggleTheme } = useTheme();
-
-    // const { unreadCount } = useNotifications(); // УДАЛЕНО: Если у вас был контекст уведомлений, удалите его импорт и использование
 
     const handleLogout = () => {
         logout();
@@ -55,7 +53,34 @@ const Header = () => {
                             <li><Link to="/my-tickets">{t('my_tickets')}</Link></li>
 
                             {user.role === 'admin' && (
-                                <li><Link to="/admin">{t('admin_dashboard')}</Link></li>
+                                <>
+                                    <li><Link to="/admin/events">{t('admin_dashboard')}</Link></li>
+                                    {/* НОВАЯ КНОПКА-КОЛОКОЛЬЧИК */}
+                                    <li>
+                                        <Link to="/admin/notifications" style={{ position: 'relative', color: 'var(--header-text-color)', textDecoration: 'none' }}>
+                                            <FaBell size={20} />
+                                            {/* Можно добавить значок с количеством непрочитанных уведомлений, если у вас есть unreadCount */}
+                                            {/* {unreadCount > 0 && (
+                                                <span style={{
+                                                    position: 'absolute',
+                                                    top: '-5px',
+                                                    right: '-10px',
+                                                    backgroundColor: 'var(--red-button-bg)', // Красный кружок
+                                                    color: 'white',
+                                                    borderRadius: '50%',
+                                                    padding: '2px 6px',
+                                                    fontSize: '0.7em',
+                                                    fontWeight: 'bold',
+                                                    lineHeight: '1',
+                                                    minWidth: '10px',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    {unreadCount}
+                                                </span>
+                                            )} */}
+                                        </Link>
+                                    </li>
+                                </>
                             )}
                             <li><button onClick={handleLogout}>{t('logout')} ({user.name})</button></li>
                         </>

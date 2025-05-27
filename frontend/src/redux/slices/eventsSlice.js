@@ -1,11 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import API from '../../api';
+import API from '../../api'; // Убедитесь, что ваш API инстанс корректно импортирован
 
 export const fetchAllEvents = createAsyncThunk(
     'events/fetchAllEvents',
-    async (_, { rejectWithValue }) => {
+    // Изменено: теперь принимает `params` в качестве первого аргумента
+    async (params = {}, { rejectWithValue }) => {
         try {
-            const response = await API.get('/events');
+            // Передаем `params` в запрос. Axios автоматически сериализует их в query string.
+            const response = await API.get('/events', { params });
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || error.message);
@@ -43,7 +45,8 @@ export const updateEvent = createAsyncThunk(
         try {
             const response = await API.put(`/events/${id}`, eventData);
             return response.data;
-        } catch (error) {
+        }
+        catch (error) {
             return rejectWithValue(error.response?.data?.message || error.message);
         }
     }
@@ -66,7 +69,6 @@ export const toggleLikeEvent = createAsyncThunk(
     async (eventId, { rejectWithValue }) => {
         try {
             const response = await API.post(`/events/${eventId}/like`);
-            // Предполагается, что бэкенд возвращает обновленное событие
             return response.data.event;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || error.message);
@@ -79,7 +81,6 @@ export const toggleDislikeEvent = createAsyncThunk(
     async (eventId, { rejectWithValue }) => {
         try {
             const response = await API.post(`/events/${eventId}/dislike`);
-            // Предполагается, что бэкенд возвращает обновленное событие
             return response.data.event;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || error.message);
@@ -92,7 +93,6 @@ export const addEventComment = createAsyncThunk(
     async ({ eventId, text }, { rejectWithValue }) => {
         try {
             const response = await API.post(`/events/${eventId}/comment`, { text });
-            // Предполагается, что бэкенд возвращает обновленное событие
             return response.data.event;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || error.message);
@@ -105,7 +105,6 @@ export const deleteEventComment = createAsyncThunk(
     async ({ eventId, commentId }, { rejectWithValue }) => {
         try {
             const response = await API.delete(`/events/${eventId}/comment/${commentId}`);
-            // Предполагается, что бэкенд возвращает обновленное событие
             return response.data.event;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || error.message);
@@ -113,14 +112,12 @@ export const deleteEventComment = createAsyncThunk(
     }
 );
 
-// --- НОВЫЙ THUNK ДЛЯ ПОКУПКИ БИЛЕТОВ ---
 export const buyTickets = createAsyncThunk(
     'events/buyTickets',
     async ({ eventId, numberOfTickets }, { rejectWithValue }) => {
         try {
             const response = await API.post(`/events/${eventId}/buy-tickets`, { numberOfTickets });
-            // Ожидаем, что бэкенд вернет объект с message и обновленным объектом события
-            return response.data; // { message: "...", event: { _id, availableTickets, ... } }
+            return response.data;
         } catch (error) {
             const message =
                 error.response && error.response.data.message
@@ -130,7 +127,6 @@ export const buyTickets = createAsyncThunk(
         }
     }
 );
-// --- КОНЕЦ НОВОГО THUNK ---
 
 
 const eventsSlice = createSlice({
@@ -138,16 +134,14 @@ const eventsSlice = createSlice({
     initialState: {
         allEvents: [],
         currentEvent: null,
-        status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+        status: 'idle',
         error: null,
     },
     reducers: {
         // Здесь можно добавить любые синхронные редьюсеры, если они нужны.
-        // Например, для сброса состояния ошибки или сообщения.
     },
     extraReducers: (builder) => {
         builder
-            // fetchAllEvents
             .addCase(fetchAllEvents.pending, (state) => {
                 state.status = 'loading';
             })
@@ -160,10 +154,9 @@ const eventsSlice = createSlice({
                 state.error = action.payload;
                 state.allEvents = [];
             })
-            // fetchEventById
             .addCase(fetchEventById.pending, (state) => {
                 state.status = 'loading';
-                state.currentEvent = null; // Очищаем предыдущее событие при новой загрузке
+                state.currentEvent = null;
             })
             .addCase(fetchEventById.fulfilled, (state, action) => {
                 state.status = 'succeeded';
@@ -174,12 +167,9 @@ const eventsSlice = createSlice({
                 state.error = action.payload;
                 state.currentEvent = null;
             })
-            // createEvent
             .addCase(createEvent.fulfilled, (state, action) => {
                 state.allEvents.push(action.payload);
-                // Если нужно обновить currentEvent после создания, добавьте логику
             })
-            // updateEvent
             .addCase(updateEvent.fulfilled, (state, action) => {
                 const index = state.allEvents.findIndex(event => event._id === action.payload._id);
                 if (index !== -1) {
@@ -189,16 +179,14 @@ const eventsSlice = createSlice({
                     state.currentEvent = action.payload;
                 }
             })
-            // deleteEvent
             .addCase(deleteEvent.fulfilled, (state, action) => {
                 state.allEvents = state.allEvents.filter(event => event._id !== action.payload);
                 if (state.currentEvent && state.currentEvent._id === action.payload) {
                     state.currentEvent = null;
                 }
             })
-            // toggleLikeEvent
             .addCase(toggleLikeEvent.fulfilled, (state, action) => {
-                const updatedEventPayload = action.payload; // Это должно быть обновленное событие целиком
+                const updatedEventPayload = action.payload;
                 const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
                 if (index !== -1) {
                     state.allEvents[index] = updatedEventPayload;
@@ -207,9 +195,8 @@ const eventsSlice = createSlice({
                     state.currentEvent = updatedEventPayload;
                 }
             })
-            // toggleDislikeEvent
             .addCase(toggleDislikeEvent.fulfilled, (state, action) => {
-                const updatedEventPayload = action.payload; // Это должно быть обновленное событие целиком
+                const updatedEventPayload = action.payload;
                 const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
                 if (index !== -1) {
                     state.allEvents[index] = updatedEventPayload;
@@ -218,9 +205,8 @@ const eventsSlice = createSlice({
                     state.currentEvent = updatedEventPayload;
                 }
             })
-            // addEventComment
             .addCase(addEventComment.fulfilled, (state, action) => {
-                const updatedEventPayload = action.payload; // Это должно быть обновленное событие целиком
+                const updatedEventPayload = action.payload;
                 const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
                 if (index !== -1) {
                     state.allEvents[index] = updatedEventPayload;
@@ -229,9 +215,8 @@ const eventsSlice = createSlice({
                     state.currentEvent = updatedEventPayload;
                 }
             })
-            // deleteEventComment
             .addCase(deleteEventComment.fulfilled, (state, action) => {
-                const updatedEventPayload = action.payload; // Это должно быть обновленное событие целиком
+                const updatedEventPayload = action.payload;
                 const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
                 if (index !== -1) {
                     state.allEvents[index] = updatedEventPayload;
@@ -240,35 +225,21 @@ const eventsSlice = createSlice({
                     state.currentEvent = updatedEventPayload;
                 }
             })
-            // --- НОВЫЕ extraReducers ДЛЯ buyTickets ---
             .addCase(buyTickets.pending, (state) => {
-                // Статус 'loading' уже устанавливается fetchEventById,
-                // поэтому здесь мы просто убеждаемся, что нет ошибки, связанной с покупкой.
-                // Если у вас есть отдельный статус для покупки, используйте его.
-                // state.purchaseStatus = 'loading';
-                state.error = null; // Очищаем предыдущие ошибки
+                state.error = null;
             })
             .addCase(buyTickets.fulfilled, (state, action) => {
-                // state.purchaseStatus = 'succeeded';
-                // Обновляем currentEvent, чтобы отобразить новое количество билетов
-                // action.payload.event содержит обновленные данные события (например, availableTickets)
                 if (state.currentEvent && state.currentEvent._id === action.payload.event._id) {
                     state.currentEvent.availableTickets = action.payload.event.availableTickets;
-                    // Если нужно, можете обновить и allEvents тоже
                     const index = state.allEvents.findIndex(event => event._id === action.payload.event._id);
                     if (index !== -1) {
                         state.allEvents[index].availableTickets = action.payload.event.availableTickets;
                     }
                 }
-                // Возможно, вам захочется сохранить `action.payload.message` в состоянии,
-                // чтобы отобразить сообщение об успешной покупке на UI.
-                // Для этого нужно будет добавить поле `purchaseMessage` в initialState.
             })
             .addCase(buyTickets.rejected, (state, action) => {
-                // state.purchaseStatus = 'failed';
-                state.error = action.payload; // Сохраняем сообщение об ошибке для отображения
+                state.error = action.payload;
             });
-        // --- КОНЕЦ НОВЫХ extraReducers ---
     },
 });
 

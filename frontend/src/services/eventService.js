@@ -1,10 +1,11 @@
 import axios from 'axios';
-import API from '../api';
+import API from '../api'; // Убедитесь, что ваш API инстанс корректно импортирован
 
 const EVENTS_API_URL = '/events';
 const UPLOAD_API_URL = '/upload';
 
 export const getEvents = async (params) => {
+    // Axios автоматически добавит `params` как query string к URL
     const response = await API.get(EVENTS_API_URL, { params });
     return response.data;
 };
@@ -66,4 +67,14 @@ export const getMyBookings = async (userId) => {
         withCredentials: true,
     });
     return response.data;
+};
+
+export const getAdminNotifications = async () => {
+    try {
+        const response = await API.get(`${EVENTS_API_URL}/admin-notifications`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching admin notifications:', error);
+        throw error.response?.data?.message || error.message;
+    }
 };

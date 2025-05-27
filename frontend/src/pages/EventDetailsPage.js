@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 import { FaThumbsUp, FaThumbsDown, FaStar, FaRegStar, FaTrash } from 'react-icons/fa';
-
 import { AuthContext } from '../context/AuthContext';
 
 const EventDetailsPage = () => {
