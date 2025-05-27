@@ -1,4 +1,3 @@
-// frontend/src/context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import API from '../api'; // Убедитесь, что это правильный импорт api.js
 
@@ -20,24 +19,24 @@ export const AuthProvider = ({ children }) => {
     // Логика проверки статуса авторизации при загрузке страницы
     useEffect(() => {
         const checkAuthStatus = async () => {
-            if (user && user.token) {
-                try {
-                    const res = await API.get('/auth/profile');
-                    setUser(res.data);
-                } catch (error) {
-                    console.error('Ошибка проверки статуса авторизации:', error.response?.data?.message || error.message);
-                    setUser(null);
-                    localStorage.removeItem('user');
-                }
-            } else {
+            try {
+                // Пытаемся получить профиль. Если кука есть и валидна, бэкенд вернет данные.
+                // Если куки нет или она не валидна, бэкенд вернет 401.
+                const res = await API.get('/users/profile'); // <-- ИСПРАВЛЕНО ЗДЕСЬ: /users/profile
+                setUser(res.data);
+            } catch (error) {
+                // Если произошла ошибка (например, 401 Unauthorized), это означает, что пользователь не авторизован.
+                console.error('Ошибка проверки статуса авторизации или пользователь не авторизован:', error.response?.data?.message || error.message);
+                // Очищаем пользователя и localStorage, так как кука невалидна
                 setUser(null);
                 localStorage.removeItem('user');
+            } finally {
+                setLoading(false); // Завершаем состояние загрузки в любом случае
             }
-            setLoading(false);
         };
 
         checkAuthStatus();
-    }, []);
+    }, []); // Пустой массив зависимостей означает, что эффект запустится только один раз при монтировании.
 
     // Добавляем isAdmin для удобства
     const isAdmin = user?.role === 'admin';
@@ -47,9 +46,9 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const { data } = await API.post('/auth/login', { email, password });
+            // Сохраняем только данные пользователя в localStorage, без токена
             localStorage.setItem('user', JSON.stringify(data));
-            setUser(data.user || data);
-
+            setUser(data); // data уже содержит данные пользователя
             return true;
         } catch (error) {
             console.error('Login failed:', error.response?.data?.message || error.message);
@@ -57,7 +56,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // --- НАЧАЛО: ЭТИ ФУНКЦИИ ДОЛЖНЫ БЫТЬ ОПРЕДЕЛЕНЫ ЗДЕСЬ ---
     const register = async (name, email, password) => {
         try {
             await API.post('/auth/register', { name, email, password });
@@ -108,8 +106,6 @@ export const AuthProvider = ({ children }) => {
             throw new Error(error.response?.data?.message || 'Ошибка обновления пароля');
         }
     };
-    // --- КОНЕЦ: ЭТИ ФУНКЦИИ ДОЛЖНЫ БЫТЬ ОПРЕДЕЛЕНЫ ЗДЕСЬ ---
-
 
     const value = {
         user,
@@ -117,7 +113,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         isAdmin,
         login,
-        register,          // <-- ТЕПЕРЬ ОНИ СУЩЕСТВУЮТ!
+        register,
         logout,
         forgotPassword,
         resetPassword,
