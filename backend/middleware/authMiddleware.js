@@ -24,7 +24,7 @@ const protect = async (req, res, next) => {
         }
         next();
     } catch (error) {
-        console.error("Ошибка верификации токена:", error.message); // Для отладки
+        console.error("Ошибка верификации токена:", error.message);
         res.status(401).json({ message: 'Не авторизован, токен недействителен' });
     }
 };

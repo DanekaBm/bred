@@ -1,4 +1,4 @@
-// backend/models/Ticket.js
+
 const mongoose = require('mongoose');
 
 const ticketSchema = mongoose.Schema(
@@ -6,19 +6,19 @@ const ticketSchema = mongoose.Schema(
         user: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,
-            ref: 'User', // Ссылка на модель User
+            ref: 'User',
         },
         event: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,
-            ref: 'Event', // Ссылка на модель Event
+            ref: 'Event',
         },
         quantity: {
             type: Number,
             required: true,
             min: 1,
         },
-        price: { // Цена билета на момент покупки (важно, т.к. цена события может измениться)
+        price: {
             type: Number,
             required: true,
             min: 0,
@@ -27,7 +27,7 @@ const ticketSchema = mongoose.Schema(
             type: Date,
             default: Date.now,
         },
-        // Возможно, дополнительные поля, такие как seatNumber, qrCode, etc.
+
     },
     {
         timestamps: true,

@@ -1,11 +1,11 @@
-// backend/controllers/eventController.js
+
 const asyncHandler = require('express-async-handler');
 const Event = require('../models/Event');
 const User = require('../models/User');
-const Notification = require('../models/notificationModel'); // Убедитесь, что эта модель существует и корректно импортирована
+const Notification = require('../models/notificationModel');
 
 const getEvents = asyncHandler(async (req, res) => {
-    // Получаем параметры фильтрации из req.query
+
     const { priceRange, ticketsRange, category, search, page, limit, sortOrder } = req.query;
 
     let query = {};
@@ -158,7 +158,7 @@ const toggleLikeEvent = asyncHandler(async (req, res) => {
     console.log('toggleLikeEvent: Запрос получен!', 'Event ID:', req.params.id, 'User ID:', req.user?._id);
 
     const event = await Event.findById(req.params.id);
-    const user = req.user; // Пользователь, который поставил/убрал лайк
+    const user = req.user;
 
     if (!event) {
         res.status(404);
@@ -169,24 +169,23 @@ const toggleLikeEvent = asyncHandler(async (req, res) => {
     let notificationType;
 
     if (event.likes.includes(userId)) {
-        // Пользователь убирает лайк
+
         event.likes = event.likes.filter((id) => id.toString() !== userId.toString());
         notificationType = 'like_removed';
     } else {
-        // Пользователь ставит лайк
+
         event.likes.push(userId);
-        event.dislikes = event.dislikes.filter((id) => id.toString() !== userId.toString()); // Убираем дизлайк, если был
+        event.dislikes = event.dislikes.filter((id) => id.toString() !== userId.toString());
         notificationType = 'new_like';
     }
     await event.save();
 
-    // Создаем уведомление для админа
-    // Текст уведомления не генерируем здесь, а передаем данные для локализации на фронтенде
+
     await Notification.create({
-        user: userId, // Пользователь, который инициировал действие
+        user: userId,
         type: notificationType,
-        title: '', // Оставляем пустым, будет формироваться на фронтенде
-        message: '', // Оставляем пустым, будет формироваться на фронтенде
+        title: '',
+        message: '',
         read: false,
         relatedEntity: {
             id: event._id,
@@ -210,7 +209,7 @@ const toggleDislikeEvent = asyncHandler(async (req, res) => {
     console.log('toggleDislikeEvent: Запрос получен!', 'Event ID:', req.params.id, 'User ID:', req.user?._id);
 
     const event = await Event.findById(req.params.id);
-    const user = req.user; // Пользователь, который поставил/убрал дизлайк
+    const user = req.user;
 
     if (!event) {
         res.status(404);
@@ -221,27 +220,26 @@ const toggleDislikeEvent = asyncHandler(async (req, res) => {
     let notificationType;
 
     if (event.dislikes.includes(userId)) {
-        // Пользователь убирает дизлайк
+
         event.dislikes = event.dislikes.filter(
             (id) => id.toString() !== userId.toString()
         );
         notificationType = 'dislike_removed';
     } else {
-        // Пользователь ставит дизлайк
+
         event.dislikes.push(userId);
         event.likes = event.likes.filter(
             (id) => id.toString() !== userId.toString()
-        ); // Убираем лайк, если был
+        );
         notificationType = 'new_dislike';
     }
     await event.save();
 
-    // Создаем уведомление для админа
     await Notification.create({
         user: userId,
         type: notificationType,
-        title: '', // Оставляем пустым, будет формироваться на фронтенде
-        message: '', // Оставляем пустым, будет формироваться на фронтенде
+        title: '',
+        message: '',
         read: false,
         relatedEntity: {
             id: event._id,
@@ -265,7 +263,7 @@ const toggleDislikeEvent = asyncHandler(async (req, res) => {
 const addComment = asyncHandler(async (req, res) => {
     const { text } = req.body;
     const event = await Event.findById(req.params.id);
-    const user = req.user; // Пользователь, который оставил комментарий
+    const user = req.user;
 
     if (!event) {
         res.status(404);
@@ -280,12 +278,11 @@ const addComment = asyncHandler(async (req, res) => {
     event.comments.push(comment);
     await event.save();
 
-    // Создание уведомления для админа
     await Notification.create({
-        user: user._id, // Пользователь, который оставил комментарий
+        user: user._id,
         type: 'new_comment',
-        title: '', // Оставляем пустым, будет формироваться на фронтенде
-        message: '', // Оставляем пустым, будет формироваться на фронтенде
+        title: '',
+        message: '',
         read: false,
         relatedEntity: {
             id: event._id,
@@ -293,7 +290,7 @@ const addComment = asyncHandler(async (req, res) => {
             eventTitle: event.title,
             userName: user.name,
             userEmail: user.email,
-            commentText: text, // Добавляем текст комментария
+            commentText: text,
         },
     });
 
@@ -348,16 +345,15 @@ const getFeaturedEvents = asyncHandler(async (req, res) => {
 });
 
 const getAdminNotifications = asyncHandler(async (req, res) => {
-    // Проверяем, является ли пользователь админом
+
     if (req.user.role !== 'admin') {
         res.status(403);
         throw new Error('Not authorized to view admin notifications');
     }
 
-    // Получаем уведомления из коллекции Notification, отсортированные по дате создания
     const notifications = await Notification.find({})
-        .populate('user', 'name email') // Если есть ссылка на пользователя, подтягиваем его данные
-        .sort({ createdAt: -1 }); // Сортируем по убыванию даты создания (самые новые сверху)
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 });
 
     res.json(notifications);
 });
@@ -410,25 +406,24 @@ const sendSupportMessage = asyncHandler(async (req, res) => {
         throw new Error('Please add a subject and message');
     }
 
-    // Создаем уведомление, сохраняя только тип и связанные данные
     const newNotification = await Notification.create({
         user: user._id,
-        type: 'support_message', // Используем этот тип для определения на фронтенде
-        title: '', // Оставляем пустым, будет сформировано на фронтенде
-        message: '', // Оставляем пустым, будет сформировано на фронтенде
+        type: 'support_message',
+        title: '',
+        message: '',
         read: false,
         relatedEntity: {
-            id: user._id, // ID пользователя, отправившего сообщение
-            type: 'SupportMessage', // Тип сущности
+            id: user._id,
+            type: 'SupportMessage',
             userName: user.name,
             userEmail: user.email,
-            supportSubject: subject, // Тема сообщения
-            supportMessage: message, // Текст сообщения
+            supportSubject: subject,
+            supportMessage: message,
         },
     });
 
     res.status(200).json({
-        message: 'Support message sent successfully', // Это сообщение тоже можно перевести на фронтенде
+        message: 'Support message sent successfully',
         notification: newNotification,
     });
 });

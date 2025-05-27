@@ -1,4 +1,4 @@
-// backend/models/Event.js
+
 const mongoose = require('mongoose');
 
 const eventSchema = mongoose.Schema(
