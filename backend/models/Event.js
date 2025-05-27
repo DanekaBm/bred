@@ -47,6 +47,12 @@ const eventSchema = mongoose.Schema(
                 ref: 'User',
             },
         ],
+        dislikes: [ // <-- НОВОЕ ПОЛЕ ДЛЯ ДИЗЛАЙКОВ
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+            },
+        ],
         comments: [
             {
                 user: {

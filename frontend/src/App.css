@@ -69,7 +69,6 @@ form textarea {
 
 form button {
   padding: 10px 15px;
-  background-color: var(--primary-color); /* Use theme variable */
   color: white;
   border: none;
   border-radius: 4px;
@@ -78,7 +77,6 @@ form button {
 }
 
 form button:hover {
-  background-color: var(--accent-color); /* Use theme variable */
 }
 
 ul {
@@ -94,3 +92,7 @@ li {
   border: 1px solid var(--text-color); /* Use theme variable for border */
   text-align: left;
 }
+@import "~slick-carousel/slick/slick.css";
+@import "~slick-carousel/slick/slick-theme.css";
+
+

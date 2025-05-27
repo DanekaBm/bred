@@ -1,16 +1,14 @@
-// frontend/src/pages/AdminManageEventsPage.js
-import React, { useEffect, useState } from 'react'; // *** ДОБАВЛЕНО: useState
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next'; // *** ДОБАВЛЕНО: useTranslation
-// import API from '../api'; // API больше не нужен здесь напрямую для большинства операций
-import { uploadEventImage, getEvents, createEvent, updateEvent, deleteEvent } from '../services/eventService'; // Импортируем все нужные функции из сервиса
+import { useTranslation } from 'react-i18next';
+// Предполагается, что эти функции уже импортированы и работают
+import { uploadEventImage, getEvents, createEvent, updateEvent, deleteEvent } from '../services/eventService';
 
 const AdminManageEventsPage = () => {
-    // *** ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЙ И ХУКОВ ***
     const { user, loading } = useAuth();
     const navigate = useNavigate();
-    const { t } = useTranslation(); // *** ИНИЦИАЛИЗАЦИЯ useTranslation
+    const { t } = useTranslation();
 
     const [events, setEvents] = useState([]);
     const [loadingEvents, setLoadingEvents] = useState(true);
@@ -30,28 +28,36 @@ const AdminManageEventsPage = () => {
     });
     const [selectedFile, setSelectedFile] = useState(null);
 
-    // --- Защита маршрута ---
+    const fileInputRef = useRef(null);
+
     useEffect(() => {
         if (!loading && (!user || user.role !== 'admin')) {
             navigate('/login');
         }
     }, [user, loading, navigate]);
 
-    // --- Загрузка событий ---
     const fetchEvents = async () => {
         setLoadingEvents(true);
         setError(null);
         try {
-            const res = await getEvents(); // ИСПОЛЬЗУЕМ getEvents ИЗ СЕРВИСА
-            if (Array.isArray(res.events)) {
+            const res = await getEvents();
+            console.log('Response from getEvents():', res); // Добавил эту строку для отладки
+
+            // ******************************************************
+            // ИЗМЕНЕНИЕ ЗДЕСЬ: Проверяем, является ли сам res массивом
+            // ******************************************************
+            if (Array.isArray(res)) {
+                setEvents(res);
+            } else if (res && Array.isArray(res.events)) {
+                // Это запасной вариант, если API будет возвращать { events: [...] }
                 setEvents(res.events);
             } else {
-                console.error('API вернул не массив "events" в свойстве .events:', res);
+                console.error('API вернул данные, которые не являются массивом или не содержат массив "events" в свойстве .events:', res);
                 setError(t('error_invalid_data_from_server'));
                 setEvents([]);
             }
         } catch (err) {
-            console.error('Ошибка загрузки событий:', err.message);
+            console.error('Ошибка загрузки событий:', err); // Логируем весь объект ошибки для лучшей диагностики
             setError(err.message || t('error_loading_events'));
             setEvents([]);
         } finally {
@@ -65,7 +71,6 @@ const AdminManageEventsPage = () => {
         }
     }, [user]);
 
-    // --- Обработчики формы ---
     const handleFormChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -74,6 +79,10 @@ const AdminManageEventsPage = () => {
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
         setFormData(prev => ({ ...prev, image: '' }));
+    };
+
+    const handleButtonClick = () => {
+        fileInputRef.current.click();
     };
 
     const handleFormSubmit = async (e) => {
@@ -157,6 +166,9 @@ const AdminManageEventsPage = () => {
         setFormData({ title: '', description: '', date: '', location: '', category: '', image: '', organizer: '' });
         setSelectedFile(null);
         setError(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     if (loading) {
@@ -260,13 +272,36 @@ const AdminManageEventsPage = () => {
 
                 <div style={{ gridColumn: '1 / span 2' }}>
                     <label style={{ display: 'block', color: 'var(--text-color)', marginBottom: '5px' }}>{t('event_image')}:</label>
-                    <input
-                        type="file"
-                        name="image"
-                        accept="image/jpeg,image/jpg,image/png,image/gif"
-                        onChange={handleFileChange}
-                        style={{ width: 'calc(100% - 20px)', padding: '10px', borderRadius: '5px', border: '1px solid var(--input-border-color)', backgroundColor: 'var(--input-bg-color)', color: 'var(--input-text-color)' }}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                            type="file"
+                            name="image"
+                            accept="image/jpeg,image/jpg,image/png,image/gif"
+                            onChange={handleFileChange}
+                            ref={fileInputRef}
+                            style={{ display: 'none' }}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleButtonClick}
+                            style={{
+                                padding: '10px 15px',
+                                backgroundColor: 'var(--button-bg-color)',
+                                color: 'var(--button-text-color)',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontSize: '0.9em',
+                                transition: 'background-color 0.3s ease'
+                            }}
+                        >
+                            {t('select_file_button')}
+                        </button>
+                        <span style={{ color: 'var(--text-color-secondary)', fontSize: '0.9em' }}>
+                            {selectedFile ? selectedFile.name : t('no_file_chosen')}
+                        </span>
+                    </div>
+
                     {uploadingImage && <p style={{ color: 'var(--text-color-secondary)', fontSize: '0.9em', marginTop: '5px' }}>{t('uploading_image')}...</p>}
                     {formData.image && !selectedFile && (
                         <div style={{ marginTop: '10px' }}>

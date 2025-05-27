@@ -8,33 +8,25 @@ const AdminPanelPage = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // Этот useEffect срабатывает после рендера и защищает маршрут
-    // Он перенаправляет пользователя, если он не авторизован или не админ,
-    // после того как состояние загрузки (loading) завершится.
     useEffect(() => {
-        console.log('AdminPanelPage useEffect: User:', user, 'Loading:', loading); // Отладочное сообщение
+        console.log('AdminPanelPage useEffect: User:', user, 'Loading:', loading);
         if (!loading && (!user || user.role !== 'admin')) {
-            console.log('AdminPanelPage useEffect: Not admin or not logged in. Redirecting to /login.'); // Отладочное сообщение
+            console.log('AdminPanelPage useEffect: Not admin or not logged in. Redirecting to /login.');
             navigate('/login');
         }
-    }, [user, loading, navigate]); // Зависимости для useEffect
+    }, [user, loading, navigate]);
 
-    // Показываем индикатор загрузки, пока AuthContext определяет статус пользователя
     if (loading) {
-        console.log('AdminPanelPage: Displaying loading message.'); // Отладочное сообщение
+        console.log('AdminPanelPage: Displaying loading message.');
         return <p style={{ textAlign: 'center', marginTop: '50px', fontSize: '1.2em' }}>{t('loading')}...</p>;
     }
 
-    // Если user не определен или его роль не 'admin' (после завершения загрузки),
-    // компонент вернет null. ProtectedAdminRoute в App.js уже должен был это обработать,
-    // но это дополнительная проверка.
     if (!user || user.role !== 'admin') {
-        console.log('AdminPanelPage: User is NOT admin or NOT authenticated. Returning null (should have been redirected).'); // Отладочное сообщение
+        console.log('AdminPanelPage: User is NOT admin or NOT authenticated. Returning null (should have been redirected).');
         return null;
     }
 
-    // Если user есть и он админ, отображаем содержимое админ-панели
-    console.log('AdminPanelPage: User IS admin. Rendering admin panel content for user:', user); // Отладочное сообщение
+    console.log('AdminPanelPage: User IS admin. Rendering admin panel content for user:', user);
     return (
         <div style={{
             padding: '20px',

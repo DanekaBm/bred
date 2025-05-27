@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api';
 import { updateProfile, uploadAvatar } from '../services/userService';
@@ -29,6 +29,10 @@ function ProfilePage() {
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarUploadMessage, setAvatarUploadMessage] = useState('');
     const [avatarUploadError, setAvatarUploadError] = useState('');
+    // Добавляем состояние для отображаемого имени файла
+    const [displayFileName, setDisplayFileName] = useState('');
+
+    const fileInputRef = useRef(null); // Создаем ref для инпута файла
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -43,7 +47,9 @@ function ProfilePage() {
                 setEmail(res.data.email);
                 setLoading(false);
             } catch (err) {
-                setError(err.response?.data?.message || t('profile_load_error'));
+                // Ошибка при загрузке профиля
+                // err.response?.data?.message будет содержать английское сообщение от бэкенда
+                setError(t(err.response?.data?.message || 'profile_load_error')); // Передаем err.response?.data?.message в t()
                 setLoading(false);
                 console.error('Ошибка загрузки профиля:', err.response?.data || err.message);
                 if (err.response?.status === 401) {
@@ -63,9 +69,12 @@ function ProfilePage() {
         try {
             const updatedUser = await updateProfile({ name, email });
             setProfileData(updatedUser);
-            setProfileUpdateMessage(t('profile_update_success'));
+            // Если updatedUser.message приходит от бэкенда, переводим его
+            setProfileUpdateMessage(t(updatedUser.message || 'profile_update_success'));
         } catch (err) {
-            setProfileUpdateError(err.message || t('profile_update_error'));
+            // Ошибка обновления профиля
+            // err.message или err.response?.data?.message будет содержать английское сообщение
+            setProfileUpdateError(t(err.response?.data?.message || 'profile_update_error'));
             console.error('Ошибка обновления профиля:', err.response?.data || err.message);
         }
     };
@@ -81,18 +90,28 @@ function ProfilePage() {
         }
 
         try {
-            const message = await updatePassword(oldPassword, newPassword);
-            setPasswordUpdateMessage(message || t('password_update_success'));
+            // Функция updatePassword должна возвращать объект, содержащий message
+            // или просто строку message, как вы ее вызываете.
+            // Если она возвращает объект с message: '...'
+            const res = await updatePassword(oldPassword, newPassword);
+            setPasswordUpdateMessage(t(res.message || 'password_update_success'));
             setOldPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
         } catch (err) {
-            setPasswordUpdateError(err.message || t('password_update_error'));
+            // Ошибка обновления пароля
+            setPasswordUpdateError(t(err.response?.data?.message || 'password_update_error'));
         }
     };
 
     const handleAvatarChange = (e) => {
-        setAvatarFile(e.target.files[0]);
+        const file = e.target.files[0];
+        setAvatarFile(file);
+        if (file) {
+            setDisplayFileName(file.name);
+        } else {
+            setDisplayFileName('');
+        }
     };
 
     const handleAvatarUpload = async (e) => {
@@ -106,18 +125,23 @@ function ProfilePage() {
         }
 
         try {
-            const avatarUrl = await uploadAvatar(avatarFile);
-            setProfileData(prevData => ({ ...prevData, avatar: avatarUrl }));
-            setAvatarUploadMessage(t('avatar_upload_success'));
+            const res = await uploadAvatar(avatarFile); // Предполагаем, что uploadAvatar также возвращает res.data.message
+            setProfileData(prevData => ({ ...prevData, avatar: res.avatarUrl || res.data.avatarUrl })); // Используем то, что возвращает API
+            setAvatarUploadMessage(t(res.message || 'avatar_upload_success')); // Переводим сообщение
             setAvatarFile(null);
+            setDisplayFileName('');
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         } catch (err) {
-            setAvatarUploadError(err.message || t('avatar_upload_error'));
+            setAvatarUploadError(t(err.response?.data?.message || 'avatar_upload_error')); // Переводим сообщение об ошибке
             console.error('Ошибка загрузки аватара:', err.response?.data || err.message);
         }
     };
 
     if (loading) return <p style={{ color: 'var(--text-color)' }}>{t('loading_profile')}</p>;
-    if (error) return <p style={{ color: 'var(--red-button-bg)' }}>{t('profile_load_error', { error: error })}</p>;
+    // Здесь error уже будет переведен
+    if (error) return <p style={{ color: 'var(--red-button-bg)' }}>{error}</p>;
     if (!user) return <p style={{ color: 'var(--text-color)' }}>{t('please_login_to_view_profile')}</p>;
 
     return (
@@ -139,9 +163,9 @@ function ProfilePage() {
                             <img src={profileData.avatar} alt={t('user_avatar')} style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--input-border-color)' }} />
                         </div>
                     )}
-                    <p style={{ color: 'var(--text-color)' }}><strong>{t('name_label')}</strong> {profileData.name}</p>
+                    <p style={{ color: 'var(--text-color)' }}><strong>{t('name_label')}:</strong> {profileData.name}</p>
                     <p style={{ color: 'var(--text-color)' }}><strong>{t('email')}:</strong> {profileData.email}</p>
-                    <p style={{ color: 'var(--text-color)' }}><strong>{t('role_label')}</strong> {profileData.role}</p>
+                    <p style={{ color: 'var(--text-color)' }}><strong>{t('role_label')}:</strong> {profileData.role}</p>
 
                     {/* Форма для обновления имени и email */}
                     <h3 style={{ color: 'var(--text-color)', marginTop: '30px' }}>{t('update_profile')}</h3>
@@ -201,16 +225,26 @@ function ProfilePage() {
                             type="file"
                             accept="image/jpeg,image/jpg,image/png,image/gif"
                             onChange={handleAvatarChange}
-                            style={{
-                                padding: '10px',
-                                border: '1px solid var(--input-border-color)',
-                                borderRadius: '4px',
-                                fontSize: '16px',
-                                backgroundColor: 'var(--input-bg-color)',
-                                color: 'var(--text-color)',
-                                transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease'
-                            }}
+                            ref={fileInputRef}
+                            style={{ display: 'none' }}
                         />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <label htmlFor="avatar-upload-input" style={{
+                                padding: '10px 15px',
+                                backgroundColor: 'var(--button-bg-color)',
+                                color: 'var(--button-text-color)',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontSize: '1em',
+                                transition: 'background-color 0.3s ease, color 0.3s ease'
+                            }}>
+                                {t('select_file_button')}
+                            </label>
+                            <span style={{ color: 'var(--text-color)', fontSize: '0.9em' }}>
+                                {displayFileName || t('no_file_chosen')}
+                            </span>
+                        </div>
                         <button type="submit" disabled={!avatarFile} style={{
                             padding: '12px 20px',
                             backgroundColor: 'var(--button-bg-color)',

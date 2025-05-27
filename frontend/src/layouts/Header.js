@@ -1,70 +1,144 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+// import { FaBell } from 'react-icons/fa'; // УДАЛЕНО: Импорт иконки колокольчика
 
-function Header() {
+const Header = () => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const { theme, toggleTheme } = useTheme();
+
+    // const { unreadCount } = useNotifications(); // УДАЛЕНО: Если у вас был контекст уведомлений, удалите его импорт и использование
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
     };
 
-    console.log('User:', user);
-    console.log('Current Language:', i18n.language);
-    console.log('Current Theme:', theme);
-
     return (
         <header style={{
+            backgroundColor: 'var(--header-bg-color)',
+            color: 'var(--header-text-color)',
+            padding: '10px 20px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '15px 20px',
-            backgroundColor: 'var(--header-bg-color)',
-            color: 'var(--header-text-color)',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             transition: 'background-color 0.3s ease, color 0.3s ease'
         }}>
-            <div className="logo">
-                <Link to="/" style={{ color: 'var(--header-text-color)', textDecoration: 'none', fontSize: '1.5em', fontWeight: 'bold' }}>
-                    {t('event_hub')}
+            <h1 style={{ margin: 0, fontSize: '1.5em' }}>
+                <Link to="/" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>
+                    Event Hub
                 </Link>
-            </div>
+            </h1>
             <nav>
                 <ul style={{
-                    listStyle: 'none',
+                    listStyleType: 'none',
                     margin: 0,
                     padding: 0,
                     display: 'flex',
-                    flexWrap: 'wrap',       // <-- ДОБАВЛЕНО/ИСПРАВЛЕНО
-                    justifyContent: 'flex-end' // <-- ДОБАВЛЕНО/ИСПРАВЛЕНО
+                    alignItems: 'center',
+                    gap: '20px'
                 }}>
-                    <li style={{ marginLeft: '20px' }}><Link to="/events" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('events')}</Link></li>
+                    <li><Link to="/events">{t('events')}</Link></li>
+
                     {user ? (
                         <>
-                            <li style={{ marginLeft: '20px' }}><Link to="/profile" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('profile')}</Link></li>
+                            {/* УДАЛЕНО: Блок кнопки уведомлений */}
+                            {/*
+                            <li style={{ position: 'relative' }}>
+                                <Link to="/notifications" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>
+                                    <FaBell size={24} />
+                                    {unreadCount > 0 && (
+                                        <span style={{
+                                            position: 'absolute',
+                                            top: '-8px',
+                                            right: '-8px',
+                                            backgroundColor: 'var(--red-button-bg)',
+                                            color: 'white',
+                                            borderRadius: '50%',
+                                            padding: '2px 6px',
+                                            fontSize: '0.75em',
+                                            fontWeight: 'bold',
+                                            minWidth: '20px',
+                                            textAlign: 'center',
+                                            lineHeight: '1.2'
+                                        }}>
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            </li>
+                            */}
+                            <li><Link to="/profile">{t('profile')}</Link></li>
                             {user.role === 'admin' && (
-                                <li style={{ marginLeft: '20px' }}><Link to="/admin" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('admin_dashboard')}</Link></li>
+                                <li><Link to="/admin">{t('admin_dashboard')}</Link></li>
                             )}
-                            <li style={{ marginLeft: '20px' }}><button onClick={logout} style={{ background: 'none', border: 'none', color: 'var(--header-text-color)', cursor: 'pointer', padding: 0, fontSize: '1em' }}>{t('logout')}</button></li>
+                            <li><button onClick={handleLogout}>{t('logout')} ({user.name})</button></li>
                         </>
                     ) : (
                         <>
-                            <li style={{ marginLeft: '20px' }}><Link to="/login" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('login')}</Link></li>
-                            <li style={{ marginLeft: '20px' }}><Link to="/register" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>{t('register')}</Link></li>
+                            <li><Link to="/register">{t('register')}</Link></li>
+                            <li><Link to="/login">{t('login')}</Link></li>
+                            <li><Link to="/password-reset">{t('password_reset')}</Link></li>
                         </>
                     )}
-                    <li style={{ marginLeft: '20px' }}>
-                        <button onClick={() => changeLanguage('en')} style={{ background: 'none', border: 'none', color: i18n.language === 'en' ? 'var(--link-hover-color)' : 'var(--header-text-color)', cursor: 'pointer', padding: 0, fontSize: '1em' }}>EN</button>
-                        <span style={{ color: 'var(--header-text-color)' }}> | </span>
-                        <button onClick={() => changeLanguage('ru')} style={{ background: 'none', border: 'none', color: i18n.language === 'ru' ? 'var(--link-hover-color)' : 'var(--header-text-color)', cursor: 'pointer', padding: 0, fontSize: '1em' }}>RU</button>
-                    </li>
-                    {/* Theme Toggle Button */}
-                    <li style={{ marginLeft: '20px' }}>
-                        <button onClick={toggleTheme} style={{ background: 'none', border: '1px solid var(--header-text-color)', color: 'var(--header-text-color)', cursor: 'pointer', padding: '5px 10px', borderRadius: '5px', fontSize: '0.9em' }}>
+
+                    <li style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <button
+                                onClick={() => changeLanguage('en')}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: i18n.language === 'en' ? 'var(--link-color)' : 'var(--header-text-color)',
+                                    cursor: 'pointer',
+                                    padding: '5px 10px',
+                                    fontSize: '0.9em',
+                                    fontWeight: i18n.language === 'en' ? 'bold' : 'normal',
+                                    borderRadius: '5px',
+                                }}
+                            >
+                                EN
+                            </button>
+                            <span style={{ color: 'var(--header-text-color)', margin: '0' }}>/</span>
+                            <button
+                                onClick={() => changeLanguage('ru')}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: i18n.language === 'ru' ? 'var(--link-color)' : 'var(--header-text-color)',
+                                    cursor: 'pointer',
+                                    padding: '5px 10px',
+                                    fontSize: '0.9em',
+                                    fontWeight: i18n.language === 'ru' ? 'bold' : 'normal',
+                                    borderRadius: '5px',
+                                }}
+                            >
+                                RU
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={toggleTheme}
+                            style={{
+                                margin: '0 0 0 15px',
+                                padding: '5px 10px',
+                                cursor: 'pointer',
+                                border: '1px solid var(--header-text-color)',
+                                borderRadius: '4px',
+                                backgroundColor: 'transparent',
+                                color: 'var(--header-text-color)',
+                                transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease',
+                            }}
+                        >
                             {theme === 'light' ? t('switch_to_dark') : t('switch_to_light')}
                         </button>
                     </li>
@@ -72,6 +146,6 @@ function Header() {
             </nav>
         </header>
     );
-}
+};
 
 export default Header;

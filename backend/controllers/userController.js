@@ -1,15 +1,18 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
-const bcrypt = require('bcryptjs'); // Нужен, если updatePassword здесь
-const multer = require('multer'); // Для загрузки файлов
-const path = require('path'); // Для работы с путями файлов
-const fs = require('fs'); // Для работы с файловой системой (удаление старых аватаров)
+// const Event = require('../models/Event'); // Возможно, Event model использовался и для уведомлений, но обычно он нужен для событий
+// Если Event model используется только для событий, а не для уведомлений, то его можно оставить, если нет - удалить.
+// Я оставляю Event, так как в вашем прошлом коде он импортировался и использовался для getUserEvents и getLikedEvents.
+const Event = require('../models/Event');
+const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // @desc    Получить профиль текущего аутентифицированного пользователя
 // @route   GET /api/users/profile
-// @access  Private (требует JWT)
+// @access  Private (требует JWT в куках)
 const getUserProfile = asyncHandler(async (req, res) => {
-    // req.user уже содержит данные пользователя из middleware 'protect'
     res.json({
         _id: req.user._id,
         name: req.user.name,
@@ -23,7 +26,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/profile
 // @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
-    const { name, email } = req.body; // Avatar обновляется через отдельный маршрут
+    const { name, email } = req.body;
 
     const user = await User.findById(req.user._id);
 
@@ -31,7 +34,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         user.name = name || user.name;
         user.email = email || user.email;
 
-        // Проверка на уникальность email, если он меняется
         if (email && email !== user.email) {
             const emailExists = await User.findOne({ email });
             if (emailExists && emailExists._id.toString() !== user._id.toString()) {
@@ -48,6 +50,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             email: updatedUser.email,
             role: updatedUser.role,
             avatar: updatedUser.avatar,
+            message: 'Профиль успешно обновлен'
         });
     } else {
         res.status(404);
@@ -55,39 +58,34 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Обновить пароль пользователя
+// @desc    Обновить пароль пользователя (уже авторизованного)
 // @route   PUT /api/users/update-password
 // @access  Private
 const updatePassword = asyncHandler(async (req, res) => {
-    const { oldPassword, newPassword, confirmNewPassword } = req.body;
+    const { oldPassword, newPassword } = req.body;
 
-    if (!oldPassword || !newPassword || !confirmNewPassword) {
-        res.status(400);
-        throw new Error('Пожалуйста, заполните все поля.');
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
     }
 
-    if (newPassword !== confirmNewPassword) {
-        res.status(400);
-        throw new Error('Новый пароль и подтверждение не совпадают.');
-    }
-
-    const user = await User.findById(req.user._id);
-
-    if (user && (await user.matchPassword(oldPassword))) {
-        user.password = newPassword; // Mongoose прехеширует пароль при сохранении
-        await user.save();
-        res.json({ message: 'Пароль успешно обновлен!' });
-    } else {
+    if (!(await user.matchPassword(oldPassword))) {
         res.status(401);
-        throw new Error('Неверный старый пароль.');
+        throw new Error('Old password is incorrect');
     }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Пароль успешно обновлен!' });
 });
 
 // @desc    Получить всех пользователей (только для админа)
 // @route   GET /api/users
 // @access  Private/Admin
 const getAllUsers = asyncHandler(async (req, res) => {
-    // Включаем поля для отображения на фронтенде, исключая чувствительные данные
     const users = await User.find({}).select('_id name email role avatar');
     res.json(users);
 });
@@ -114,7 +112,7 @@ const updateUser = asyncHandler(async (req, res) => {
     if (user) {
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
-        user.role = req.body.role || user.role; // Позволяем админу обновлять роль
+        user.role = req.body.role || user.role;
 
         const updatedUser = await user.save();
 
@@ -139,13 +137,11 @@ const deleteUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
 
     if (user) {
-        // Защита: админ не может удалить сам себя через эту панель
         if (req.user._id.toString() === user._id.toString()) {
             res.status(400);
             throw new Error('Вы не можете удалить свой собственный аккаунт через эту панель.');
         }
 
-        // Если у пользователя был аватар, удаляем старый файл аватара
         if (user.avatar) {
             const avatarPath = path.join(__dirname, '..', 'uploads', 'avatars', path.basename(user.avatar));
             if (fs.existsSync(avatarPath)) {
@@ -154,7 +150,7 @@ const deleteUser = asyncHandler(async (req, res) => {
             }
         }
 
-        await user.deleteOne(); // Используйте .deleteOne() для Mongoose 6+
+        await user.deleteOne();
         res.json({ message: 'Пользователь удален' });
     } else {
         res.status(404);
@@ -166,7 +162,6 @@ const deleteUser = asyncHandler(async (req, res) => {
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const uploadDir = path.join(__dirname, '..', 'uploads', 'avatars');
-        // Создаем директорию, если она не существует
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -190,7 +185,7 @@ const upload = multer({
         }
         cb(new Error('Только изображения (jpeg, jpg, png, gif) разрешены!'));
     }
-}).single('avatar'); // 'avatar' - это имя поля для файла в форме
+}).single('avatar');
 
 // @desc    Загрузить или обновить аватар пользователя
 // @route   POST /api/users/upload-avatar
@@ -198,11 +193,9 @@ const upload = multer({
 const uploadAvatar = asyncHandler(async (req, res) => {
     upload(req, res, async (err) => {
         if (err) {
-            // Multer ошибки
             if (err instanceof multer.MulterError) {
                 return res.status(400).json({ message: `Ошибка загрузки: ${err.message}` });
             }
-            // Другие ошибки
             return res.status(400).json({ message: err.message });
         }
         if (!req.file) {
@@ -215,7 +208,6 @@ const uploadAvatar = asyncHandler(async (req, res) => {
                 return res.status(404).json({ message: 'Пользователь не найден.' });
             }
 
-            // Если у пользователя уже был аватар, удаляем старый файл
             if (user.avatar) {
                 const oldAvatarFilename = path.basename(user.avatar);
                 const oldAvatarPath = path.join(__dirname, '..', 'uploads', 'avatars', oldAvatarFilename);
@@ -225,8 +217,6 @@ const uploadAvatar = asyncHandler(async (req, res) => {
                 }
             }
 
-            // Формируем ПОЛНЫЙ URL аватара
-            // Используем process.env.PORT для динамического определения порта
             const backendBaseUrl = `http://localhost:${process.env.PORT || 5001}`;
             user.avatar = `${backendBaseUrl}/uploads/avatars/${req.file.filename}`;
 
@@ -234,7 +224,7 @@ const uploadAvatar = asyncHandler(async (req, res) => {
 
             res.status(200).json({
                 message: 'Аватар успешно загружен и обновлен!',
-                avatarUrl: user.avatar // Теперь здесь полный URL
+                avatarUrl: user.avatar
             });
 
         } catch (error) {
@@ -244,14 +234,40 @@ const uploadAvatar = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Получить события, созданные определенным пользователем
+// @route   GET /api/users/:userId/events
+// @access  Private (только для авторизованных пользователей)
+const getUserEvents = asyncHandler(async (req, res) => {
+    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
+        res.status(403);
+        throw new Error('Not authorized to view these events');
+    }
+    const userEvents = await Event.find({ createdBy: req.params.userId }).populate('createdBy', 'name email');
+    res.json(userEvents);
+});
+
+// @desc    Получить события, которые лайкнул определенный пользователь
+// @route   GET /api/users/:userId/liked-events
+// @access  Private (только для авторизованных пользователей)
+const getLikedEvents = asyncHandler(async (req, res) => {
+    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
+        res.status(403);
+        throw new Error('Not authorized to view liked events');
+    }
+
+    const likedEvents = await Event.find({ likes: req.params.userId }).populate('createdBy', 'name email');
+    res.json(likedEvents);
+});
 
 module.exports = {
     getUserProfile,
     updateUserProfile,
-    updatePassword, // Возможно, это должно быть в authController, но пока оставим здесь
+    updatePassword,
     getAllUsers,
     getUserById,
     updateUser,
     deleteUser,
-    uploadAvatar // <--- ЭКСПОРТИРУЕМ ФУНКЦИЮ ЗАГРУЗКИ АВАТАРА
+    uploadAvatar,
+    getUserEvents,
+    getLikedEvents,
 };

@@ -1,54 +1,67 @@
+// frontend/src/context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import API from '../api'; // Импортируем настроенный Axios
+import API from '../api'; // Убедитесь, что это правильный импорт api.js
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    // Инициализируем user из localStorage, если он там есть
+    const [user, setUser] = useState(() => {
+        try {
+            const storedUser = localStorage.getItem('user');
+            return storedUser ? JSON.parse(storedUser) : null;
+        } catch (error) {
+            console.error("Failed to parse user from localStorage:", error);
+            return null;
+        }
+    });
     const [loading, setLoading] = useState(true);
 
+    // Логика проверки статуса авторизации при загрузке страницы
     useEffect(() => {
         const checkAuthStatus = async () => {
-            try {
-                // Пытаемся получить профиль пользователя.
-                // Если токен в куки, браузер отправит его автоматически.
-                const res = await API.get('/auth/profile');
-                setUser(res.data);
-            } catch (error) {
-                // Если запрос к профилю возвращает ошибку (например, 401 Unauthorized),
-                // значит, пользователь не авторизован или токен недействителен.
-                console.error('Ошибка проверки статуса авторизации:', error.response?.data?.message || error.message);
-                setUser(null); // Сбрасываем пользователя
-            } finally {
-                setLoading(false);
+            if (user && user.token) {
+                try {
+                    const res = await API.get('/auth/profile');
+                    setUser(res.data);
+                } catch (error) {
+                    console.error('Ошибка проверки статуса авторизации:', error.response?.data?.message || error.message);
+                    setUser(null);
+                    localStorage.removeItem('user');
+                }
+            } else {
+                setUser(null);
+                localStorage.removeItem('user');
             }
+            setLoading(false);
         };
 
         checkAuthStatus();
-    }, []); // Пустой массив зависимостей, чтобы выполнять только один раз при монтировании
+    }, []);
 
     // Добавляем isAdmin для удобства
     const isAdmin = user?.role === 'admin';
+    // Исправленный isAuthenticated
+    const isAuthenticated = !!user;
 
     const login = async (email, password) => {
         try {
-            // Отправляем учетные данные. Бэкенд установит токен в Set-Cookie И ВЕРНЕТ ДАННЫЕ ПОЛЬЗОВАТЕЛЯ.
             const { data } = await API.post('/auth/login', { email, password });
+            localStorage.setItem('user', JSON.stringify(data));
+            setUser(data.user || data);
 
-            // Устанавливаем данные пользователя, которые пришли непосредственно из ответа на логин
-            setUser(data);
-
-            return true; // Успешный вход
+            return true;
         } catch (error) {
             console.error('Login failed:', error.response?.data?.message || error.message);
             throw new Error(error.response?.data?.message || 'Ошибка входа');
         }
     };
 
+    // --- НАЧАЛО: ЭТИ ФУНКЦИИ ДОЛЖНЫ БЫТЬ ОПРЕДЕЛЕНЫ ЗДЕСЬ ---
     const register = async (name, email, password) => {
         try {
             await API.post('/auth/register', { name, email, password });
-            return true; // Успешная регистрация
+            return true;
         } catch (error) {
             console.error('Registration failed:', error.response?.data?.message || error.message);
             throw new Error(error.response?.data?.message || 'Ошибка регистрации');
@@ -57,20 +70,15 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            // Если бэкенд имеет маршрут для очистки куки на сервере (например, /auth/logout)
-            // этот запрос отправит куки, и бэкенд их удалит/аннулирует.
-            // Если такого маршрута нет, можно удалить эту строку.
             await API.post('/auth/logout');
         } catch (error) {
             console.error('Logout failed:', error.message);
         } finally {
             setUser(null);
-            // Удаляем старую логику удаления из localStorage
-            // localStorage.removeItem('user'); // Эту строку УДАЛЯЕМ
+            localStorage.removeItem('user');
         }
     };
 
-    // НОВЫЕ ФУНКЦИИ ДЛЯ СБРОСА ПАРОЛЯ
     const forgotPassword = async (email) => {
         try {
             const res = await API.post('/auth/forgot-password', { email });
@@ -91,7 +99,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // ВОЗВРАЩЕННАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ ПАРОЛЯ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ
     const updatePassword = async (oldPassword, newPassword) => {
         try {
             const res = await API.put('/auth/update-password', { oldPassword, newPassword });
@@ -101,13 +108,16 @@ export const AuthProvider = ({ children }) => {
             throw new Error(error.response?.data?.message || 'Ошибка обновления пароля');
         }
     };
+    // --- КОНЕЦ: ЭТИ ФУНКЦИИ ДОЛЖНЫ БЫТЬ ОПРЕДЕЛЕНЫ ЗДЕСЬ ---
+
 
     const value = {
         user,
         loading,
-        isAdmin, // Предоставляем флаг isAdmin
+        isAuthenticated,
+        isAdmin,
         login,
-        register,
+        register,          // <-- ТЕПЕРЬ ОНИ СУЩЕСТВУЮТ!
         logout,
         forgotPassword,
         resetPassword,
@@ -116,11 +126,15 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children} {/* Отображаем дочерние элементы после загрузки */}
+            {!loading && children}
         </AuthContext.Provider>
     );
 };
 
 export const useAuth = () => {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 };

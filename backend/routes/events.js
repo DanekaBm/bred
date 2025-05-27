@@ -1,3 +1,4 @@
+// backend/routes/events.js
 const express = require('express');
 const router = express.Router();
 const {
@@ -6,37 +7,25 @@ const {
     createEvent,
     updateEvent,
     deleteEvent,
-    likeEvent,
+    toggleLikeEvent,
+    toggleDislikeEvent, // <-- ИМПОРТИРУЕМ НОВУЮ ФУНКЦИЮ
     addComment,
     deleteComment,
+    getFeaturedEvents,
 } = require('../controllers/eventController');
-const { protect, authorizeRoles } = require('../middleware/authMiddleware'); // Импортируем authorizeRoles
+const { protect } = require('../middleware/authMiddleware');
 
-// Публичные маршруты (не требуют аутентификации)
-router.route('/').get(getEvents);
-router.route('/:id').get(getEventById);
+// НОВЫЕ ПЕРСОНАЛИЗИРОВАННЫЕ МАРШРУТЫ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ (Сначала, так как они более специфичны)
+router.get('/featured', getFeaturedEvents); // Получить рекомендованные (для карусели)
 
-// Защищенные маршруты (требуют аутентификации И проверки роли)
+// Маршруты для событий (ОБЩИЕ МАРШРУТЫ - после специфичных)
+router.route('/').get(getEvents).post(protect, createEvent);
+router.route('/:id').get(getEventById).put(protect, updateEvent).delete(protect, deleteEvent);
 
-// @route   POST /api/events
-// @desc    Создать новое событие (ТОЛЬКО АДМИН)
-// @access  Private/Admin
-router.route('/')
-    .post(protect, authorizeRoles('admin'), createEvent); // <-- Добавлена проверка роли 'admin'
-
-router.route('/:id')
-    // @route   PUT /api/events/:id
-    // @desc    Обновить событие по ID (ТОЛЬКО АДМИН)
-    // @access  Private/Admin
-    .put(protect, authorizeRoles('admin'), updateEvent) // <-- Добавлена проверка роли 'admin'
-    // @route   DELETE /api/events/:id
-    // @desc    Удалить событие по ID (ТОЛЬКО АДМИН)
-    // @access  Private/Admin
-    .delete(protect, authorizeRoles('admin'), deleteEvent); // <-- Добавлена проверка роли 'admin'
-
-// Маршруты для лайков и комментариев (доступны всем авторизованным пользователям)
-router.route('/:id/like').post(protect, likeEvent);
-router.route('/:id/comment').post(protect, addComment);
-router.route('/:eventId/comment/:commentId').delete(protect, deleteComment);
+// Лайки и комментарии
+router.post('/:id/like', protect, toggleLikeEvent);
+router.post('/:id/dislike', protect, toggleDislikeEvent); // <-- НОВЫЙ МАРШРУТ ДЛЯ ДИЗЛАЙКОВ
+router.post('/:id/comment', protect, addComment);
+router.delete('/:id/comment/:commentId', protect, deleteComment);
 
 module.exports = router;

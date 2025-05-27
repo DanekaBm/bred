@@ -1,14 +1,20 @@
 // src/pages/PasswordResetPage.js
-import React, { useState } from 'react';
+import React, { useState } from 'react'; // Убедитесь, что useState импортирован
 import API from '../api'; // Убедитесь, что у вас есть этот импорт для вызова API
+import { useTranslation } from 'react-i18next';
 
 const PasswordResetPage = () => {
+    const { t } = useTranslation();
+
+    // *** ВОТ ЧТО БЫЛО ПРОПУЩЕНО ИЛИ УДАЛЕНО ***
+    // Объявление состояний с помощью useState
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    // *** КОНЕЦ ПРОПУЩЕННОГО БЛОКА ***
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -16,17 +22,17 @@ const PasswordResetPage = () => {
         setError('');
 
         if (!name || !email || !newPassword || !confirmNewPassword) {
-            setError('Пожалуйста, заполните все поля.');
+            setError(t('fill_all_fields_error'));
             return;
         }
 
         if (newPassword !== confirmNewPassword) {
-            setError('Новый пароль и подтверждение не совпадают.');
+            setError(t('passwords_do_not_match_error'));
             return;
         }
 
         if (newPassword.length < 6) {
-            setError('Новый пароль должен быть не менее 6 символов.');
+            setError(t('password_min_length_error'));
             return;
         }
 
@@ -36,25 +42,26 @@ const PasswordResetPage = () => {
                 email,
                 newPassword,
             });
-            setMessage(res.data.message);
+            setMessage(t(res.data.message)); // Используем t() для перевода сообщения от бэкенда
             setName('');
             setEmail('');
             setNewPassword('');
             setConfirmNewPassword('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Произошла ошибка при сбросе пароля.');
+            // Используем t() для перевода сообщения об ошибке от бэкенда
+            setError(t(err.response?.data?.message || 'password_reset_error_occurred'));
             console.error('Ошибка при прямом сбросе пароля:', err.response?.data || err.message);
         }
     };
 
     return (
         <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-            <h2>Сброс пароля</h2>
-            <p>Введите ваше имя, email и новый пароль.</p>
+            <h2>{t('password_reset_page_title')}</h2>
+            <p>{t('password_reset_intro')}</p>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <input
                     type="text"
-                    placeholder="Ваше Имя"
+                    placeholder={t('your_name_placeholder')}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -62,7 +69,7 @@ const PasswordResetPage = () => {
                 />
                 <input
                     type="email"
-                    placeholder="Ваш Email"
+                    placeholder={t('your_email_placeholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -70,7 +77,7 @@ const PasswordResetPage = () => {
                 />
                 <input
                     type="password"
-                    placeholder="Новый пароль"
+                    placeholder={t('new_password_placeholder')}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
@@ -78,7 +85,7 @@ const PasswordResetPage = () => {
                 />
                 <input
                     type="password"
-                    placeholder="Подтвердите новый пароль"
+                    placeholder={t('confirm_new_password_placeholder')}
                     value={confirmNewPassword}
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
                     required
@@ -88,7 +95,7 @@ const PasswordResetPage = () => {
                     type="submit"
                     style={{ padding: '10px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
-                    Сбросить и установить пароль
+                    {t('reset_and_set_password_button')}
                 </button>
                 {message && <p style={{ color: 'green', marginTop: '10px' }}>{message}</p>}
                 {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}

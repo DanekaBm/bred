@@ -1,4 +1,3 @@
-// frontend/src/pages/AdminUserListPage.js
 import React, { useState, useEffect } from 'react';
 import API from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -14,9 +13,8 @@ function AdminUserListPage() {
     const { t } = useTranslation();
 
     useEffect(() => {
-        // Проверяем, что пользователь авторизован и является админом
         if (!user || user.role !== 'admin') {
-            navigate('/'); // Перенаправляем на главную, если не админ
+            navigate('/');
             return;
         }
 
@@ -40,7 +38,7 @@ function AdminUserListPage() {
     }, [user, token, navigate]);
 
     const handleDeleteUser = async (id) => {
-        if (window.confirm(t('confirm_delete_user'))) { // Добавляем перевод
+        if (window.confirm(t('confirm_delete_user'))) {
             try {
                 const config = {
                     headers: {
@@ -57,20 +55,19 @@ function AdminUserListPage() {
 
     if (loading) return <div>{t('loading')}...</div>;
     if (error) return <div style={{ color: 'red' }}>{error}</div>;
-    // Если пользователь не админ, это будет обработано useEffect выше, но можно добавить и здесь
     if (!user || user.role !== 'admin') return <div style={{ color: 'red' }}>{t('access_denied')}.</div>;
 
 
     return (
         <div style={{ maxWidth: '800px', margin: '50px auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-            <h2>{t('user_management')}</h2> {/* Добавляем перевод */}
+            <h2>{t('user_management')}</h2>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
                 <thead>
                 <tr style={{ backgroundColor: '#f2f2f2' }}>
                     <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>ID</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>{t('your_name')}</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>{t('your_email')}</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>{t('actions')}</th> {/* Добавляем перевод */}
+                    <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>{t('name')}</th>
+                    <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>{t('email')}</th>
+                    <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>{t('actions')}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -84,7 +81,7 @@ function AdminUserListPage() {
                                 onClick={() => handleDeleteUser(u._id)}
                                 style={{ padding: '8px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                             >
-                                {t('delete')} {/* Добавляем перевод */}
+                                {t('delete')}
                             </button>
                         </td>
                     </tr>

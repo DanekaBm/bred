@@ -1,4 +1,3 @@
-// backend/server.js
 
 const path = require('path');
 const express = require('express');
@@ -12,12 +11,13 @@ const userRoutes = require('./routes/users.js');
 const eventRoutes = require('./routes/events.js');
 const uploadRoutes = require('./routes/uploadRoutes.js');
 
+
 dotenv.config();
 
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:3000', // ТОЧНЫЙ URL вашего фронтенда
+  origin: 'http://localhost:3000',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -42,8 +42,6 @@ app.use('/uploads', express.static(path.join(__dirname_absolute, 'uploads')));
 app.get('/', (req, res) => {
   res.send('API запущен и работает...');
 });
-
-// ----------------------------------------------------------------------
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));
