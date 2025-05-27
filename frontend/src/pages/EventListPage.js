@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 
-import { fetchAllEvents, toggleLikeEvent, addEventComment, deleteEventComment } from '../redux/slices/eventsSlice';
+import { fetchAllEvents } from '../redux/slices/eventsSlice'; // Удалены toggleLikeEvent, addEventComment, deleteEventComment
 
 function EventListPage() {
     const dispatch = useDispatch();
-    const { user } = useAuth();
     const { t, i18n } = useTranslation();
 
     const events = useSelector(state => state.events.allEvents);
     const eventsStatus = useSelector(state => state.events.status);
     const error = useSelector(state => state.events.error);
 
-    const [commentText, setCommentText] = useState({});
+    // Состояния для сортировки и поиска
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' для А-Я, 'desc' для Я-А
 
     const formatLocalizedDateTime = (isoString) => {
         if (!isoString) return '';
@@ -37,34 +37,31 @@ function EventListPage() {
         }
     }, [eventsStatus, dispatch]);
 
-    const handleLike = (eventId) => {
-        if (!user) {
-            alert(t('please_login_to_like'));
-            return;
-        }
-        dispatch(toggleLikeEvent(eventId));
-    };
+    // Логика фильтрации и сортировки событий
+    const filteredAndSortedEvents = useMemo(() => {
+        let currentEvents = [...events]; // Создаем копию для мутаций
 
-    const handleAddComment = (eventId) => {
-        if (!user) {
-            alert(t('please_login_to_comment'));
-            return;
+        // 1. Фильтрация по поисковому запросу
+        if (searchTerm) {
+            currentEvents = currentEvents.filter(event =>
+                event.title.toLowerCase().includes(searchTerm.toLowerCase())
+            );
         }
-        const text = commentText[eventId] || '';
-        if (!text.trim()) {
-            alert(t('comment_cannot_be_empty'));
-            return;
-        }
-        dispatch(addEventComment({ eventId, text }));
-        setCommentText((prev) => ({ ...prev, [eventId]: '' }));
-    };
 
-    const handleDeleteComment = (eventId, commentId) => {
-        if (!window.confirm(t('confirm_delete_comment'))) {
-            return;
-        }
-        dispatch(deleteEventComment({ eventId, commentId }));
-    };
+        // 2. Сортировка по названию
+        currentEvents.sort((a, b) => {
+            const titleA = a.title.toLowerCase();
+            const titleB = b.title.toLowerCase();
+
+            if (sortOrder === 'asc') {
+                return titleA.localeCompare(titleB); // Сортировка А-Я
+            } else {
+                return titleB.localeCompare(titleA); // Сортировка Я-А
+            }
+        });
+
+        return currentEvents;
+    }, [events, searchTerm, sortOrder]); // Пересчитываем только при изменении этих зависимостей
 
     if (eventsStatus === 'loading') return <p style={{ color: 'var(--text-color)' }}>{t('loading_events')}</p>;
     if (eventsStatus === 'failed') return <p style={{ color: 'var(--red-button-bg)' }}>{error}</p>;
@@ -72,11 +69,45 @@ function EventListPage() {
     return (
         <div style={{ color: 'var(--text-color)' }}>
             <h2>{t('event_list')}</h2>
-            {events.length === 0 ? (
-                <p>{t('no_events_yet')}</p>
+
+            {/* Блок поиска и сортировки */}
+            <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
+                <input
+                    type="text"
+                    placeholder={t('search_by_title')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                        padding: '10px',
+                        borderRadius: '5px',
+                        border: '1px solid var(--input-border-color)',
+                        backgroundColor: 'var(--input-bg-color)',
+                        color: 'var(--input-text-color)',
+                        width: '300px'
+                    }}
+                />
+                <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    style={{
+                        padding: '10px',
+                        borderRadius: '5px',
+                        border: '1px solid var(--input-border-color)',
+                        backgroundColor: 'var(--input-bg-color)',
+                        color: 'var(--input-text-color)'
+                    }}
+                >
+                    <option value="asc">{t('sort_asc')}</option>
+                    <option value="desc">{t('sort_desc')}</option>
+                </select>
+            </div>
+            {/* Конец блока поиска и сортировки */}
+
+            {filteredAndSortedEvents.length === 0 ? (
+                <p>{t('no_events_found')}</p>
             ) : (
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {events.map((event) => (
+                    {filteredAndSortedEvents.map((event) => (
                         <li key={event._id} style={{
                             marginBottom: '20px',
                             padding: '20px',
@@ -104,7 +135,7 @@ function EventListPage() {
                             <Link to={`/events/${event._id}`} style={{ textDecoration: 'none', color: 'var(--link-color)' }}>
                                 <h3>{event.title}</h3>
                             </Link>
-                            <p style={{ color: 'var(--text-color)' }}><strong>{t('location_label')}</strong>{event.location}</p>
+                            <p style={{ color: 'var(--text-color)' }}><strong>{t('location_label')}</strong> {event.location}</p>
                             <p style={{ color: 'var(--text-color)' }}><strong>{t('date_label')}</strong> {formatLocalizedDateTime(event.date)}</p>
                         </li>
                     ))}

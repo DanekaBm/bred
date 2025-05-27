@@ -5,16 +5,19 @@ export const getUserProfile = async () => {
         const response = await API.get('/users/profile');
         return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Ошибка загрузки профиля');
+        // Убедитесь, что error.response?.data?.message является ключом перевода на бэкенде
+        throw new Error(error.response?.data?.message || 'profile_load_error');
     }
 };
 
 export const updateProfile = async (userData) => {
     try {
         const response = await API.put('/users/profile', userData);
+        // response.data должен содержать message (ключ перевода)
         return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Ошибка обновления профиля');
+        // Убедитесь, что error.response?.data?.message является ключом перевода на бэкенде
+        throw new Error(error.response?.data?.message || 'profile_update_error');
     }
 };
 
@@ -28,17 +31,21 @@ export const uploadAvatar = async (avatarFile) => {
                 'Content-Type': 'multipart/form-data',
             }
         });
-        return response.data.avatarUrl;
+        // <-- ИЗМЕНЕНИЕ ЗДЕСЬ: Возвращаем весь объект data, который содержит message и avatarUrl
+        return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Ошибка загрузки аватара');
+        // Убедитесь, что error.response?.data?.message является ключом перевода на бэкенде
+        throw new Error(error.response?.data?.message || 'avatar_upload_error');
     }
 };
 
 export const updateCurrentUserPassword = async (oldPassword, newPassword) => {
     try {
         const response = await API.put('/auth/update-password', { oldPassword, newPassword });
+        // response.data должен содержать message (ключ перевода)
         return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Ошибка обновления пароля пользователя');
+        // Убедитесь, что error.response?.data?.message является ключом перевода на бэкенде
+        throw new Error(error.response?.data?.message || 'password_update_error');
     }
 };

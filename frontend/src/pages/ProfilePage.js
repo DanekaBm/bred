@@ -30,6 +30,7 @@ function ProfilePage() {
 
     const fileInputRef = useRef(null);
 
+    // Эффект для загрузки профиля пользователя
     useEffect(() => {
         const fetchProfile = async () => {
             if (!user) {
@@ -43,18 +44,20 @@ function ProfilePage() {
                 setEmail(res.data.email);
                 setLoading(false);
             } catch (err) {
+                // Если бэкенд возвращает ключ перевода, используем его, иначе - дефолтный ключ
                 setError(t(err.response?.data?.message || 'profile_load_error'));
                 setLoading(false);
                 console.error('Ошибка загрузки профиля:', err.response?.data || err.message);
                 if (err.response?.status === 401) {
-                    logout();
+                    logout(); // Выход, если токен недействителен
                 }
             }
         };
 
         fetchProfile();
-    }, [user, logout, t]);
+    }, [user, logout, t]); // Зависимости: user, logout, t (для перевода ошибок)
 
+    // Обработчик обновления профиля (имя, email)
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
         setProfileUpdateMessage('');
@@ -63,13 +66,15 @@ function ProfilePage() {
         try {
             const updatedUser = await updateProfile({ name, email });
             setProfileData(updatedUser);
-            setProfileUpdateMessage(t(updatedUser.message || 'profile_update_success'));
+            // updatedUser.message теперь должен быть ключом перевода с бэкенда
+            setProfileUpdateMessage(t(updatedUser.message));
         } catch (err) {
             setProfileUpdateError(t(err.response?.data?.message || 'profile_update_error'));
             console.error('Ошибка обновления профиля:', err.response?.data || err.message);
         }
     };
 
+    // Обработчик обновления пароля
     const handlePasswordUpdate = async (e) => {
         e.preventDefault();
         setPasswordUpdateMessage('');
@@ -82,7 +87,8 @@ function ProfilePage() {
 
         try {
             const res = await updatePassword(oldPassword, newPassword);
-            setPasswordUpdateMessage(t(res.message || 'password_update_success'));
+            // res.message теперь должен быть ключом перевода с бэкенда
+            setPasswordUpdateMessage(t(res.message));
             setOldPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
@@ -91,6 +97,7 @@ function ProfilePage() {
         }
     };
 
+    // Обработчик изменения файла аватара
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
         setAvatarFile(file);
@@ -101,26 +108,34 @@ function ProfilePage() {
         }
     };
 
+    // Обработчик загрузки аватара
     const handleAvatarUpload = async (e) => {
         e.preventDefault();
         setAvatarUploadMessage('');
         setAvatarUploadError('');
 
         if (!avatarFile) {
-            setAvatarUploadError(t('select_file_for_upload'));
+            setAvatarUploadError(t('no_file_selected_key')); // Использование ключа перевода
             return;
         }
 
         try {
-            const res = await uploadAvatar(avatarFile);
-            setProfileData(prevData => ({ ...prevData, avatar: res.avatarUrl || res.data.avatarUrl }));
-            setAvatarUploadMessage(t(res.message || 'avatar_upload_success'));
+            // uploadAvatar теперь возвращает весь объект data, который содержит message и avatarUrl
+            const resData = await uploadAvatar(avatarFile);
+
+            // Обновляем состояние 'profileData' с новым URL аватара
+            setProfileData(prevData => ({ ...prevData, avatar: resData.avatarUrl }));
+
+            // Сообщение об успешной загрузке из ответа бэкенда (ключ перевода)
+            setAvatarUploadMessage(t(resData.message));
+
             setAvatarFile(null);
             setDisplayFileName('');
             if (fileInputRef.current) {
-                fileInputRef.current.value = "";
+                fileInputRef.current.value = ""; // Очищаем поле выбора файла
             }
         } catch (err) {
+            // Обработка ошибок загрузки аватара, используя ключ перевода
             setAvatarUploadError(t(err.response?.data?.message || 'avatar_upload_error'));
             console.error('Ошибка загрузки аватара:', err.response?.data || err.message);
         }
@@ -210,6 +225,7 @@ function ProfilePage() {
                             accept="image/jpeg,image/jpg,image/png,image/gif"
                             onChange={handleAvatarChange}
                             ref={fileInputRef}
+                            id="avatar-upload-input" // <-- Исправлено: добавлен ID
                             style={{ display: 'none' }}
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

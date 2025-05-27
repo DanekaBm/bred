@@ -287,5 +287,8 @@
   "purchase_date": "Дата покупки",
   "n_a": "Н/Д",
   "error_loading_profile": "Ошибка загрузки профиля",
-  "ticket_purchase_success_message": "Вы успешно купили {{count}} билет(ов) на \"{{eventTitle}}\"."
+  "ticket_purchase_success_message": "Вы успешно купили {{count}} билет(ов) на \"{{eventTitle}}\".",
+  "search_by_title": "Поиск по названию",
+  "sort_asc": "Sort: А-Я, A-Z",
+  "sort_desc": "Sort: Z-A, Я-А"
 }

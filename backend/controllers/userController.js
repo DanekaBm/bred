@@ -29,7 +29,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             const emailExists = await User.findOne({ email });
             if (emailExists && emailExists._id.toString() !== user._id.toString()) {
                 res.status(400);
-                throw new Error('Пользователь с таким email уже существует');
+                // Изменено на ключ перевода
+                throw new Error('email_already_exists_key');
             }
         }
 
@@ -41,11 +42,13 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             email: updatedUser.email,
             role: updatedUser.role,
             avatar: updatedUser.avatar,
-            message: 'Профиль успешно обновлен'
+            // Изменено на ключ перевода
+            message: 'Profile updated successfully'
         });
     } else {
         res.status(404);
-        throw new Error('Пользователь не найден');
+        // Изменено на ключ перевода
+        throw new Error('user_not_found_key');
     }
 });
 
@@ -56,18 +59,21 @@ const updatePassword = asyncHandler(async (req, res) => {
 
     if (!user) {
         res.status(404);
-        throw new Error('User not found');
+        // Изменено на ключ перевода
+        throw new Error('user_not_found_key');
     }
 
     if (!(await user.matchPassword(oldPassword))) {
         res.status(401);
-        throw new Error('Old password is incorrect');
+        // Изменено на ключ перевода
+        throw new Error('old_password_incorrect_key');
     }
 
     user.password = newPassword;
     await user.save();
 
-    res.json({ message: 'Пароль успешно обновлен!' });
+    // Изменено на ключ перевода
+    res.json({ message: 'password_updated_success_key' });
 });
 
 const getAllUsers = asyncHandler(async (req, res) => {
@@ -81,7 +87,8 @@ const getUserById = asyncHandler(async (req, res) => {
         res.json(user);
     } else {
         res.status(404);
-        throw new Error('Пользователь не найден');
+        // Изменено на ключ перевода
+        throw new Error('user_not_found_key');
     }
 });
 
@@ -101,11 +108,13 @@ const updateUser = asyncHandler(async (req, res) => {
             email: updatedUser.email,
             role: updatedUser.role,
             avatar: updatedUser.avatar,
-            message: 'Пользователь успешно обновлен'
+            // Изменено на ключ перевода
+            message: 'user_updated_success_key' // Добавил новый ключ для этого сообщения
         });
     } else {
         res.status(404);
-        throw new Error('Пользователь не найден');
+        // Изменено на ключ перевода
+        throw new Error('user_not_found_key');
     }
 });
 
@@ -115,7 +124,8 @@ const deleteUser = asyncHandler(async (req, res) => {
     if (user) {
         if (req.user._id.toString() === user._id.toString()) {
             res.status(400);
-            throw new Error('Вы не можете удалить свой собственный аккаунт через эту панель.');
+            // Изменено на ключ перевода
+            throw new Error('cannot_delete_own_account_key');
         }
 
         if (user.avatar) {
@@ -127,10 +137,12 @@ const deleteUser = asyncHandler(async (req, res) => {
         }
 
         await user.deleteOne();
-        res.json({ message: 'Пользователь удален' });
+        // Изменено на ключ перевода
+        res.json({ message: 'user_deleted_success_key' });
     } else {
         res.status(404);
-        throw new Error('Пользователь не найден');
+        // Изменено на ключ перевода
+        throw new Error('user_not_found_key');
     }
 });
 
@@ -158,7 +170,8 @@ const upload = multer({
         if (mimetype && extname) {
             return cb(null, true);
         }
-        cb(new Error('Только изображения (jpeg, jpg, png, gif) разрешены!'));
+        // Изменено на ключ перевода
+        cb(new Error('only_images_allowed_key'));
     }
 }).single('avatar');
 
@@ -166,18 +179,22 @@ const uploadAvatar = asyncHandler(async (req, res) => {
     upload(req, res, async (err) => {
         if (err) {
             if (err instanceof multer.MulterError) {
-                return res.status(400).json({ message: `Ошибка загрузки: ${err.message}` });
+                // Изменено на ключ перевода, используя общий ключ для Multer ошибок
+                return res.status(400).json({ message: 'upload_error_key', details: err.message });
             }
-            return res.status(400).json({ message: err.message });
+            // Если ошибка не от Multer, но тоже передана как сообщение
+            return res.status(400).json({ message: err.message }); // Возможно, тут тоже нужен ключ
         }
         if (!req.file) {
-            return res.status(400).json({ message: 'Файл не выбран.' });
+            // Изменено на ключ перевода
+            return res.status(400).json({ message: 'no_file_selected_key' });
         }
 
         try {
             const user = await User.findById(req.user._id);
             if (!user) {
-                return res.status(404).json({ message: 'Пользователь не найден.' });
+                // Изменено на ключ перевода
+                return res.status(404).json({ message: 'user_not_found_key' });
             }
 
             if (user.avatar) {
@@ -195,13 +212,15 @@ const uploadAvatar = asyncHandler(async (req, res) => {
             await user.save();
 
             res.status(200).json({
-                message: 'Аватар успешно загружен и обновлен!',
+                // Изменено на ключ перевода
+                message: 'avatar_upload_success_key',
                 avatarUrl: user.avatar
             });
 
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: 'Ошибка сервера при загрузке аватара.' });
+            // Изменено на ключ перевода
+            res.status(500).json({ message: 'server_error_avatar_upload_key' });
         }
     });
 });
@@ -209,7 +228,8 @@ const uploadAvatar = asyncHandler(async (req, res) => {
 const getUserEvents = asyncHandler(async (req, res) => {
     if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
         res.status(403);
-        throw new Error('Not authorized to view these events');
+        // Изменено на ключ перевода
+        throw new Error('not_authorized_to_view_events_key');
     }
     const userEvents = await Event.find({ createdBy: req.params.userId }).populate('createdBy', 'name email');
     res.json(userEvents);
@@ -218,7 +238,8 @@ const getUserEvents = asyncHandler(async (req, res) => {
 const getLikedEvents = asyncHandler(async (req, res) => {
     if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
         res.status(403);
-        throw new Error('Not authorized to view liked events');
+        // Изменено на ключ перевода
+        throw new Error('not_authorized_to_view_liked_events_key');
     }
 
     const likedEvents = await Event.find({ likes: req.params.userId }).populate('createdBy', 'name email');

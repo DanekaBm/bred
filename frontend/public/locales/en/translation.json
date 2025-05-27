@@ -287,5 +287,8 @@
   "purchase_date": "Purchase Date",
   "n_a": "N/A",
   "error_loading_profile": "Error loading profile",
-  "ticket_purchase_success_message": "You successfully purchased {{count}} ticket(s) for \"{{eventTitle}}\"."
+  "ticket_purchase_success_message": "You successfully purchased {{count}} ticket(s) for \"{{eventTitle}}\".",
+  "search_by_title": "Search by title",
+  "sort_asc": "Sort: А-Я, A-Z",
+  "sort_desc": "Sort: Z-A, Я-А"
 }

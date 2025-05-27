@@ -1,6 +1,8 @@
+// backend/controllers/eventController.js
 const asyncHandler = require('express-async-handler');
 const Event = require('../models/Event');
 const User = require('../models/User');
+
 const getEvents = asyncHandler(async (req, res) => {
     const events = await Event.find({})
         .populate('createdBy', 'name email')
@@ -27,7 +29,8 @@ const getEventById = asyncHandler(async (req, res) => {
 });
 
 const createEvent = asyncHandler(async (req, res) => {
-    const { title, description, date, location, category, image, organizer } = req.body;
+    // *** ИСПРАВЛЕНО: Добавлены price и availableTickets в деструктуризацию ***
+    const { title, description, date, location, category, image, organizer, price, availableTickets } = req.body;
 
     const event = new Event({
         title,
@@ -37,17 +40,22 @@ const createEvent = asyncHandler(async (req, res) => {
         category,
         image,
         organizer,
+        price, // *** Добавлено
+        availableTickets, // *** Добавлено
         createdBy: req.user._id
     });
 
     const createdEvent = await event.save();
+    // Обратите внимание: populate здесь возвращает только createdBy.
+    // Если вам нужно populate likes/dislikes/comments сразу после создания, добавьте их.
     const populatedEvent = await Event.findById(createdEvent._id)
         .populate('createdBy', 'name email');
     res.status(201).json(populatedEvent);
 });
 
 const updateEvent = asyncHandler(async (req, res) => {
-    const { title, description, date, location, category, image, organizer } = req.body;
+    // *** ИСПРАВЛЕНО: Добавлены price и availableTickets в деструктуризацию ***
+    const { title, description, date, location, category, image, organizer, price, availableTickets } = req.body;
 
     const event = await Event.findById(req.params.id);
 
@@ -64,6 +72,8 @@ const updateEvent = asyncHandler(async (req, res) => {
         event.category = category || event.category;
         event.image = image !== undefined ? image : event.image;
         event.organizer = organizer || event.organizer;
+        event.price = price !== undefined ? price : event.price; // *** Добавлено: используем !== undefined для корректного сохранения 0
+        event.availableTickets = availableTickets !== undefined ? availableTickets : event.availableTickets; // *** Добавлено
 
         const updatedEvent = await event.save();
         const populatedEvent = await Event.findById(updatedEvent._id)
