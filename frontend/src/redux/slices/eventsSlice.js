@@ -85,7 +85,6 @@ export const toggleDislikeEvent = createAsyncThunk(
     }
 );
 
-
 export const addEventComment = createAsyncThunk(
     'events/addEventComment',
     async ({ eventId, text }, { rejectWithValue }) => {
@@ -110,19 +109,56 @@ export const deleteEventComment = createAsyncThunk(
     }
 );
 
+export const buyTickets = createAsyncThunk(
+    'events/buyTickets',
+    async ({ eventId, numberOfTickets }, { rejectWithValue }) => {
+        try {
+            const response = await API.post(`/events/${eventId}/buy-tickets`, { numberOfTickets });
+            return response.data; // { message: "...", event: { _id, availableTickets, ... } }
+        } catch (error) {
+            const message =
+                error.response && error.response.data.message
+                    ? error.response.data.message
+                    : error.message;
+            return rejectWithValue(message);
+        }
+    }
+);
 
 const eventsSlice = createSlice({
     name: 'events',
     initialState: {
         allEvents: [],
         currentEvent: null,
-        status: 'idle',
-        error: null,
+        status: 'idle', // Общий статус для загрузки списков/отдельных элементов
+        error: null, // Общая ошибка
+        creationStatus: 'idle', // 'idle' | 'pending' | 'succeeded' | 'failed'
+        updateStatus: 'idle',
+        deleteStatus: 'idle',
+        purchaseMessage: null, // Сообщение об успешной покупке
+        purchaseError: null, // Ошибка покупки билетов
+    },
+    reducers: {
+        // Синхронные редьюсеры, если нужны для сброса состояний или ошибок
+        clearPurchaseMessage: (state) => {
+            state.purchaseMessage = null;
+        },
+        clearPurchaseError: (state) => {
+            state.purchaseError = null;
+        },
+        clearEventFormStatus: (state) => { // Для сброса статусов формы после операций
+            state.creationStatus = 'idle';
+            state.updateStatus = 'idle';
+            state.deleteStatus = 'idle';
+            state.error = null; // Сброс общей ошибки, если она связана с формой
+        }
     },
     extraReducers: (builder) => {
         builder
+            // fetchAllEvents
             .addCase(fetchAllEvents.pending, (state) => {
                 state.status = 'loading';
+                state.error = null; // Очищаем ошибку при начале загрузки
             })
             .addCase(fetchAllEvents.fulfilled, (state, action) => {
                 state.status = 'succeeded';
@@ -133,9 +169,11 @@ const eventsSlice = createSlice({
                 state.error = action.payload;
                 state.allEvents = [];
             })
+            // fetchEventById
             .addCase(fetchEventById.pending, (state) => {
                 state.status = 'loading';
                 state.currentEvent = null;
+                state.error = null;
             })
             .addCase(fetchEventById.fulfilled, (state, action) => {
                 state.status = 'succeeded';
@@ -146,10 +184,26 @@ const eventsSlice = createSlice({
                 state.error = action.payload;
                 state.currentEvent = null;
             })
+            // createEvent
+            .addCase(createEvent.pending, (state) => {
+                state.creationStatus = 'pending';
+                state.error = null; // Очищаем общую ошибку
+            })
             .addCase(createEvent.fulfilled, (state, action) => {
+                state.creationStatus = 'succeeded';
                 state.allEvents.push(action.payload);
             })
+            .addCase(createEvent.rejected, (state, action) => {
+                state.creationStatus = 'failed';
+                state.error = action.payload; // Сохраняем ошибку создания
+            })
+            // updateEvent
+            .addCase(updateEvent.pending, (state) => {
+                state.updateStatus = 'pending';
+                state.error = null;
+            })
             .addCase(updateEvent.fulfilled, (state, action) => {
+                state.updateStatus = 'succeeded';
                 const index = state.allEvents.findIndex(event => event._id === action.payload._id);
                 if (index !== -1) {
                     state.allEvents[index] = action.payload;
@@ -158,12 +212,27 @@ const eventsSlice = createSlice({
                     state.currentEvent = action.payload;
                 }
             })
+            .addCase(updateEvent.rejected, (state, action) => {
+                state.updateStatus = 'failed';
+                state.error = action.payload; // Сохраняем ошибку обновления
+            })
+            // deleteEvent
+            .addCase(deleteEvent.pending, (state) => {
+                state.deleteStatus = 'pending';
+                state.error = null;
+            })
             .addCase(deleteEvent.fulfilled, (state, action) => {
+                state.deleteStatus = 'succeeded';
                 state.allEvents = state.allEvents.filter(event => event._id !== action.payload);
                 if (state.currentEvent && state.currentEvent._id === action.payload) {
                     state.currentEvent = null;
                 }
             })
+            .addCase(deleteEvent.rejected, (state, action) => {
+                state.deleteStatus = 'failed';
+                state.error = action.payload; // Сохраняем ошибку удаления
+            })
+            // toggleLikeEvent
             .addCase(toggleLikeEvent.fulfilled, (state, action) => {
                 const updatedEventPayload = action.payload;
                 const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
@@ -174,6 +243,7 @@ const eventsSlice = createSlice({
                     state.currentEvent = updatedEventPayload;
                 }
             })
+            // toggleDislikeEvent
             .addCase(toggleDislikeEvent.fulfilled, (state, action) => {
                 const updatedEventPayload = action.payload;
                 const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
@@ -184,6 +254,7 @@ const eventsSlice = createSlice({
                     state.currentEvent = updatedEventPayload;
                 }
             })
+            // addEventComment
             .addCase(addEventComment.fulfilled, (state, action) => {
                 const updatedEventPayload = action.payload;
                 const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
@@ -194,6 +265,7 @@ const eventsSlice = createSlice({
                     state.currentEvent = updatedEventPayload;
                 }
             })
+            // deleteEventComment
             .addCase(deleteEventComment.fulfilled, (state, action) => {
                 const updatedEventPayload = action.payload;
                 const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
@@ -203,8 +275,33 @@ const eventsSlice = createSlice({
                 if (state.currentEvent && state.currentEvent._id === updatedEventPayload._id) {
                     state.currentEvent = updatedEventPayload;
                 }
+            })
+            // buyTickets
+            .addCase(buyTickets.pending, (state) => {
+                state.purchaseMessage = null; // Сбрасываем сообщение об успехе
+                state.purchaseError = null; // Сбрасываем ошибку
+            })
+            .addCase(buyTickets.fulfilled, (state, action) => {
+                state.purchaseMessage = action.payload.message; // Сохраняем сообщение об успехе
+                state.purchaseError = null; // Очищаем ошибку
+                // Обновляем currentEvent и allEvents с новым количеством билетов
+                const updatedEventPayload = action.payload.event;
+                if (state.currentEvent && state.currentEvent._id === updatedEventPayload._id) {
+                    state.currentEvent.availableTickets = updatedEventPayload.availableTickets;
+                }
+                const index = state.allEvents.findIndex(event => event._id === updatedEventPayload._id);
+                if (index !== -1) {
+                    state.allEvents[index].availableTickets = updatedEventPayload.availableTickets;
+                }
+            })
+            .addCase(buyTickets.rejected, (state, action) => {
+                state.purchaseMessage = null; // Сбрасываем сообщение об успехе
+                state.purchaseError = action.payload; // Сохраняем сообщение об ошибке
             });
     },
 });
+
+// Экспортируем синхронные экшены
+export const { clearPurchaseMessage, clearPurchaseError, clearEventFormStatus } = eventsSlice.actions;
 
 export default eventsSlice.reducer;

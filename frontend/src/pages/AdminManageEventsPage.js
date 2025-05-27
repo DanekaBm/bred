@@ -23,7 +23,11 @@ const AdminManageEventsPage = () => {
         location: '',
         category: '',
         image: '',
-        organizer: ''
+        organizer: '',
+        // --- НОВЫЕ ПОЛЯ ДЛЯ БИЛЕТОВ ---
+        price: 0, // Начальное значение по умолчанию
+        availableTickets: 0 // Начальное значение по умолчанию
+        // --- КОНЕЦ НОВЫХ ПОЛЕЙ ---
     });
     const [selectedFile, setSelectedFile] = useState(null);
 
@@ -67,8 +71,12 @@ const AdminManageEventsPage = () => {
     }, [user]);
 
     const handleFormChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const { name, value, type } = e.target;
+        // Для числовых полей, преобразуем значение в число
+        setFormData({
+            ...formData,
+            [name]: type === 'number' ? parseFloat(value) : value
+        });
     };
 
     const handleFileChange = (e) => {
@@ -84,10 +92,23 @@ const AdminManageEventsPage = () => {
         e.preventDefault();
         setError(null);
 
-        if (!formData.title || !formData.description || !formData.date || !formData.location || !formData.category || !formData.organizer) {
+        // Проверка обязательных полей (включая price и availableTickets)
+        if (!formData.title || !formData.description || !formData.date || !formData.location ||
+            !formData.category || !formData.organizer || formData.price === null || formData.availableTickets === null) {
             setError(t('all_fields_required'));
             return;
         }
+
+        // Дополнительные проверки для числовых полей
+        if (isNaN(formData.price) || formData.price < 0) {
+            setError(t('invalid_price'));
+            return;
+        }
+        if (isNaN(formData.availableTickets) || formData.availableTickets < 0) {
+            setError(t('invalid_available_tickets'));
+            return;
+        }
+
 
         let finalImageUrl = formData.image;
 
@@ -105,7 +126,13 @@ const AdminManageEventsPage = () => {
             }
         }
 
-        const eventData = { ...formData, image: finalImageUrl };
+        // Создаем объект eventData со всеми полями, включая price и availableTickets
+        const eventData = {
+            ...formData,
+            image: finalImageUrl,
+            price: formData.price, // Убеждаемся, что это число
+            availableTickets: formData.availableTickets // Убеждаемся, что это число
+        };
 
         try {
             if (isEditing && currentEvent) {
@@ -115,11 +142,22 @@ const AdminManageEventsPage = () => {
                 await createEvent(eventData);
                 alert(t('event_created_successfully'));
             }
-            setFormData({ title: '', description: '', date: '', location: '', category: '', image: '', organizer: '' });
+            // Сброс формы после успешной операции
+            setFormData({
+                title: '',
+                description: '',
+                date: '',
+                location: '',
+                category: '',
+                image: '',
+                organizer: '',
+                price: 0,
+                availableTickets: 0
+            });
             setSelectedFile(null);
             setCurrentEvent(null);
             setIsEditing(false);
-            fetchEvents();
+            fetchEvents(); // Обновляем список событий
         } catch (err) {
             console.error('Ошибка операции с событием:', err.message);
             setError(err.message || t('error_saving_event'));
@@ -132,11 +170,13 @@ const AdminManageEventsPage = () => {
         setFormData({
             title: event.title,
             description: event.description,
-            date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
+            date: event.date ? new Date(event.date).toISOString().split('T')[0] : '', // Форматируем дату для input type="date"
             location: event.location,
             category: event.category,
             image: event.image || '',
-            organizer: event.organizer
+            organizer: event.organizer,
+            price: event.price || 0, // Устанавливаем текущую цену
+            availableTickets: event.availableTickets || 0 // Устанавливаем текущее количество билетов
         });
         setSelectedFile(null);
     };
@@ -158,7 +198,17 @@ const AdminManageEventsPage = () => {
     const handleCancelEdit = () => {
         setIsEditing(false);
         setCurrentEvent(null);
-        setFormData({ title: '', description: '', date: '', location: '', category: '', image: '', organizer: '' });
+        setFormData({
+            title: '',
+            description: '',
+            date: '',
+            location: '',
+            category: '',
+            image: '',
+            organizer: '',
+            price: 0,
+            availableTickets: 0
+        });
         setSelectedFile(null);
         setError(null);
         if (fileInputRef.current) {
@@ -171,7 +221,7 @@ const AdminManageEventsPage = () => {
     }
 
     if (!user || user.role !== 'admin') {
-        return null;
+        return null; // Или перенаправить на другую страницу, если еще не был перенаправлен
     }
 
     return (
@@ -193,6 +243,7 @@ const AdminManageEventsPage = () => {
                 {isEditing ? t('edit_event') : t('add_new_event')}
             </h2>
             <form onSubmit={handleFormSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
+                {/* Существующие поля */}
                 <div>
                     <label style={{ display: 'block', color: 'var(--text-color)', marginBottom: '5px' }}>{t('title')}:</label>
                     <input
@@ -264,6 +315,37 @@ const AdminManageEventsPage = () => {
                         required
                     />
                 </div>
+
+                {/* --- НОВЫЕ ПОЛЯ ДЛЯ БИЛЕТОВ --- */}
+                <div>
+                    <label style={{ display: 'block', color: 'var(--text-color)', marginBottom: '5px' }}>{t('price')}:</label>
+                    <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleFormChange}
+                        placeholder={t('ticket_price')}
+                        min="0"
+                        step="0.01" // Позволяет вводить десятичные значения для цены
+                        style={{ width: 'calc(100% - 20px)', padding: '10px', borderRadius: '5px', border: '1px solid var(--input-border-color)', backgroundColor: 'var(--input-bg-color)', color: 'var(--input-text-color)' }}
+                        required
+                    />
+                </div>
+                <div>
+                    <label style={{ display: 'block', color: 'var(--text-color)', marginBottom: '5px' }}>{t('available_tickets')}:</label>
+                    <input
+                        type="number"
+                        name="availableTickets"
+                        value={formData.availableTickets}
+                        onChange={handleFormChange}
+                        placeholder={t('number_of_available_tickets')}
+                        min="0"
+                        step="1" // Билеты должны быть целыми числами
+                        style={{ width: 'calc(100% - 20px)', padding: '10px', borderRadius: '5px', border: '1px solid var(--input-border-color)', backgroundColor: 'var(--input-bg-color)', color: 'var(--input-text-color)' }}
+                        required
+                    />
+                </div>
+                {/* --- КОНЕЦ НОВЫХ ПОЛЕЙ --- */}
 
                 <div style={{ gridColumn: '1 / span 2' }}>
                     <label style={{ display: 'block', color: 'var(--text-color)', marginBottom: '5px' }}>{t('event_image')}:</label>
@@ -370,6 +452,12 @@ const AdminManageEventsPage = () => {
                                 <p style={{ color: 'var(--text-color-secondary)', fontSize: '0.9em' }}>
                                     {new Date(event.date).toLocaleDateString()} - {event.location} ({event.category})
                                 </p>
+                                {/* Отображение цены и доступных билетов в списке событий */}
+                                {event.price !== undefined && event.availableTickets !== undefined && (
+                                    <p style={{ color: 'var(--text-color-secondary)', fontSize: '0.9em', marginTop: '5px' }}>
+                                        <strong>{t('price')}:</strong> {event.price} {t('currency_symbol')} | <strong>{t('available_tickets')}:</strong> {event.availableTickets}
+                                    </p>
+                                )}
                                 {event.image && (
                                     <img src={`http://localhost:5001${event.image}`} alt={event.title} style={{ width: '100px', height: 'auto', borderRadius: '4px', marginTop: '10px' }} />
                                 )}

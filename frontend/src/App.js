@@ -14,6 +14,7 @@ import EventDetailsPage from './pages/EventDetailsPage';
 import AdminUserListPage from './pages/AdminUserListPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import AdminManageEventsPage from './pages/AdminManageEventsPage';
+import MyTicketsPage from "./pages/MyTicketsPage";
 import Header from './layouts/Header';
 
 import './App.css';
@@ -47,6 +48,7 @@ function AppContent() {
                             <Route path="/profile" element={<ProfilePage />} />
                             <Route path="/events" element={<EventListPage />} />
                             <Route path="/events/:id" element={<EventDetailsPage />} />
+                            <Route path="/my-tickets" element={<MyTicketsPage />} />
                             {user.role === 'admin' && (
                                 <>
                                     <Route path="/admin" element={<AdminPanelPage />} />

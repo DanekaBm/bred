@@ -1,3 +1,4 @@
+// backend/models/Event.js
 const mongoose = require('mongoose');
 
 const eventSchema = mongoose.Schema(
@@ -46,7 +47,7 @@ const eventSchema = mongoose.Schema(
                 ref: 'User',
             },
         ],
-        dislikes: [ // <-- НОВОЕ ПОЛЕ ДЛЯ ДИЗЛАЙКОВ
+        dislikes: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'User',
@@ -73,6 +74,18 @@ const eventSchema = mongoose.Schema(
                 },
             },
         ],
+        price: {
+            type: Number,
+            required: true,
+            min: 0,
+            default: 0,
+        },
+        availableTickets: {
+            type: Number,
+            required: true,
+            min: 0,
+            default: 0,
+        },
     },
     {
         timestamps: true,

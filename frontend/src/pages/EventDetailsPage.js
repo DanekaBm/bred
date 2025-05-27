@@ -1,12 +1,13 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     fetchEventById,
     toggleLikeEvent,
     toggleDislikeEvent,
     addEventComment,
-    deleteEventComment
+    deleteEventComment,
+    buyTickets // <-- ИМПОРТИРУЕМ НОВЫЙ THUNK
 } from '../redux/slices/eventsSlice';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
@@ -22,16 +23,28 @@ const EventDetailsPage = () => {
     const { t, i18n } = useTranslation();
 
     const event = useSelector((state) => state.events.currentEvent);
-    const status = useSelector((state) => state.events.status);
-    const error = useSelector((state) => state.events.error);
+    const status = useSelector((state) => state.events.status); // Статус для fetchEventById
+    const error = useSelector((state) => state.events.error); // Ошибка для fetchEventById
 
     const { user } = useContext(AuthContext);
     const currentUserId = user?._id;
     const isAdmin = user?.role === 'admin';
 
+    const [numTickets, setNumTickets] = useState(1);
+
+    const { currentEvent } = useSelector((state) => state.events); // <-- currentEvent должен быть получен здесь
+
+
     const [commentText, setCommentText] = useState('');
-    const [eventLoading, setEventLoading] = useState(true);
+    const [eventLoading, setEventLoading] = useState(true); // Для начальной загрузки event
     const [commentPosting, setCommentPosting] = useState(false);
+
+    // --- НОВОЕ СОСТОЯНИЕ ДЛЯ ПОКУПКИ БИЛЕТОВ ---
+    const [numberOfTicketsToBuy, setNumberOfTicketsToBuy] = useState(1);
+    const [purchaseMessage, setPurchaseMessage] = useState('');
+    const [purchaseError, setPurchaseError] = useState('');
+    const purchaseStatus = useSelector(state => state.events.status); // Используем статус для отслеживания buyTickets
+    // --- КОНЕЦ НОВОГО СОСТОЯНИЯ ---
 
     const formatLocalizedDateTime = (isoString) => {
         if (!isoString) return '';
@@ -54,8 +67,10 @@ const EventDetailsPage = () => {
         }
     }, [id, dispatch]);
 
+    // Для лайков и дизлайков
     const handleLike = () => {
         if (!user) {
+            alert(t('login_to_like'));
             navigate('/login');
             return;
         }
@@ -64,12 +79,14 @@ const EventDetailsPage = () => {
 
     const handleDislike = () => {
         if (!user) {
+            alert(t('login_to_dislike'));
             navigate('/login');
             return;
         }
         dispatch(toggleDislikeEvent(event._id));
     };
 
+    // Для комментариев
     const handleAddComment = async (e) => {
         e.preventDefault();
         if (!user) {
@@ -108,12 +125,47 @@ const EventDetailsPage = () => {
         }
     };
 
+    // --- НОВАЯ ФУНКЦИЯ ДЛЯ ПОКУПКИ БИЛЕТОВ ---
+    const handleBuyTickets = async () => {
+        if (!user) { // user из AuthContext, а не из Redux
+            alert(t('login_to_buy_tickets'));
+            navigate('/login');
+            return;
+        }
 
-    if (eventLoading || status === 'loading') {
+        if (numberOfTicketsToBuy <= 0) {
+            setPurchaseError(t('invalid_number_of_tickets'));
+            return;
+        }
+
+        if (numberOfTicketsToBuy > event.availableTickets) {
+            setPurchaseError(t('not_enough_tickets_available') + event.availableTickets);
+            return;
+        }
+
+        setPurchaseMessage('');
+        setPurchaseError('');
+
+        try {
+            const resultAction = await dispatch(buyTickets({
+                eventId: event._id,
+                numberOfTickets: numberOfTicketsToBuy,
+            })).unwrap(); // .unwrap() вернет payload или выбросит ошибку
+            setPurchaseMessage(resultAction.message);
+            setNumberOfTicketsToBuy(1); // Сброс количества
+        } catch (err) {
+            console.error('Ошибка при покупке билетов:', err);
+            setPurchaseError(err || t('failed_to_purchase_tickets')); // err уже содержит сообщение от rejectWithValue
+        }
+    };
+    // --- КОНЕЦ НОВОЙ ФУНКЦИИ ---
+
+
+    if (eventLoading || status === 'loading') { // Проверка статуса Redux slice для fetchEventById
         return <p style={{ textAlign: 'center', marginTop: '50px' }}>{t('loading_event_details')}</p>;
     }
 
-    if (status === 'failed') {
+    if (status === 'failed') { // Ошибка Redux slice для fetchEventById
         return <p style={{ color: 'var(--danger-color)', textAlign: 'center', marginTop: '50px' }}>{error}</p>;
     }
 
@@ -121,6 +173,7 @@ const EventDetailsPage = () => {
         return <p style={{ textAlign: 'center', marginTop: '50px' }}>{t('event_not_found')}</p>;
     }
 
+    // Для лайков и дизлайков
     const isLiked = currentUserId && event.likes && event.likes.includes(currentUserId);
     const isDisliked = currentUserId && event.dislikes && event.dislikes.includes(currentUserId);
 
@@ -184,12 +237,12 @@ const EventDetailsPage = () => {
             </p>
             <p style={{ color: 'var(--secondary-color)'}}>
                 <strong>{t('organizer')}:</strong> {event.organizer}
-                </p>
+            </p>
 
             {event.createdBy && (
                 <p style={{ color: 'var(--secondary-color)' }}>
-                <strong>{t('created_by_label')}:</strong> {event.createdBy.name} ({event.createdBy.email})
-            </p>
+                    <strong>{t('created_by_label')}:</strong> {event.createdBy.name} ({event.createdBy.email})
+                </p>
             )}
 
             <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -239,6 +292,68 @@ const EventDetailsPage = () => {
                 </button>
             </div>
 
+            {/* --- БЛОК ПОКУПКИ БИЛЕТОВ --- */}
+            <div style={{ marginTop: '30px', padding: '20px', border: '1px solid var(--card-border-color)', borderRadius: '8px', backgroundColor: 'var(--element-bg-color)' }}>
+                <h2 style={{ color: 'var(--text-color)' }}>{t('tickets')}</h2>
+                <p style={{ color: 'var(--secondary-color)' }}>
+                    <strong>{t('price')}:</strong> {event.price} {t('currency_symbol')}
+                </p>
+                <p style={{ color: 'var(--secondary-color)' }}>
+                    <strong>{t('available_tickets')}:</strong> {event.availableTickets}
+                </p>
+
+                {event.availableTickets > 0 ? (
+                    user ? ( // Проверяем user из AuthContext для авторизации
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
+                            <label htmlFor="numTickets" style={{ color: 'var(--text-color)' }}>{t('number_of_tickets')}:</label>
+                            <input
+                                type="number"
+                                id="numTickets"
+                                value={numberOfTicketsToBuy}
+                                onChange={(e) => setNumberOfTicketsToBuy(parseInt(e.target.value) || 0)}
+                                min="1"
+                                max={event.availableTickets}
+                                style={{ width: '150px', padding: '8px', borderRadius: '4px', border: '1px solid var(--input-border-color)', backgroundColor: 'var(--input-bg-color)', color: 'var(--input-text-color)' }}
+                            />
+                            <button
+                                onClick={handleBuyTickets}
+                                disabled={purchaseStatus === 'loading'} // Отключаем кнопку во время загрузки
+                                style={{
+                                    padding: '10px 20px',
+                                    backgroundColor: 'light-blue',
+                                    color: 'white',
+                                    borderRadius: '5px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'background-color 0.3s ease',
+                                    width: 'fit-content',
+                                    opacity: purchaseStatus === 'loading' ? 0.7 : 1
+                                }}
+                            >
+                                {purchaseStatus === 'loading' ? t('purchasing') : t('buy_tickets')}
+                            </button>
+                            {purchaseMessage && (
+                                <p style={{ color: 'green', textAlign: 'center', marginTop: '10px' }}>
+                                    {t('ticket_purchase_success_message', { count: numTickets, eventTitle: currentEvent.title })}
+                                </p>
+                            )}
+                            {purchaseError && (
+                                <p style={{ color: 'red', textAlign: 'center', marginTop: '10px' }}>
+                                    {t('purchase_failed')} {purchaseError}
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <p style={{ marginTop: '15px', color: 'var(--secondary-color)' }}>
+                            <Link to="/login" style={{ color: 'var(--link-color)' }}>{t('login_to_buy_tickets_link')}</Link>
+                        </p>
+                    )
+                ) : (
+                    <p style={{ color: 'red', marginTop: '15px' }}>{t('tickets_sold_out')}</p>
+                )}
+            </div>
+            {/* --- КОНЕЦ БЛОКА ПОКУПКИ БИЛЕТОВ --- */}
+
             <div style={{ marginTop: '30px', borderTop: '1px solid var(--card-border-color)', paddingTop: '20px' }}>
                 <h2 style={{ color: 'var(--text-color)', marginBottom: '20px' }}>{t('comments')}</h2>
 
@@ -264,7 +379,7 @@ const EventDetailsPage = () => {
                             disabled={commentPosting}
                             style={{
                                 padding: '10px 20px',
-                                backgroundColor: 'light-blue',
+                                backgroundColor: 'var(--primary-color)', // Изменил цвет кнопки
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '5px',

@@ -51,33 +51,9 @@ const Header = () => {
 
                     {user ? (
                         <>
-                            {/* УДАЛЕНО: Блок кнопки уведомлений */}
-                            {/*
-                            <li style={{ position: 'relative' }}>
-                                <Link to="/notifications" style={{ color: 'var(--header-text-color)', textDecoration: 'none' }}>
-                                    <FaBell size={24} />
-                                    {unreadCount > 0 && (
-                                        <span style={{
-                                            position: 'absolute',
-                                            top: '-8px',
-                                            right: '-8px',
-                                            backgroundColor: 'var(--red-button-bg)',
-                                            color: 'white',
-                                            borderRadius: '50%',
-                                            padding: '2px 6px',
-                                            fontSize: '0.75em',
-                                            fontWeight: 'bold',
-                                            minWidth: '20px',
-                                            textAlign: 'center',
-                                            lineHeight: '1.2'
-                                        }}>
-                                            {unreadCount}
-                                        </span>
-                                    )}
-                                </Link>
-                            </li>
-                            */}
                             <li><Link to="/profile">{t('profile')}</Link></li>
+                            <li><Link to="/my-tickets">{t('my_tickets')}</Link></li>
+
                             {user.role === 'admin' && (
                                 <li><Link to="/admin">{t('admin_dashboard')}</Link></li>
                             )}
