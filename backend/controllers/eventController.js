@@ -2,53 +2,69 @@
 const asyncHandler = require('express-async-handler');
 const Event = require('../models/Event');
 const User = require('../models/User');
+const Notification = require('../models/notificationModel'); // Убедитесь, что эта модель существует и корректно импортирована
 
 const getEvents = asyncHandler(async (req, res) => {
     // Получаем параметры фильтрации из req.query
-    const { priceRange, ticketsRange, category, search } = req.query;
+    const { priceRange, ticketsRange, category, search, page, limit, sortOrder } = req.query;
 
-    let query = {}; // Объект для формирования запроса к базе данных
+    let query = {};
 
-    // Фильтрация по цене
     if (priceRange) {
         if (priceRange === 'upTo1000') {
-            query.price = { $lte: 1000 }; // Цена меньше или равна 1000
+            query.price = { $lte: 1000 };
         } else if (priceRange === 'over1001') {
-            query.price = { $gte: 1001 }; // Цена больше или равна 1001
+            query.price = { $gte: 1001 };
         }
     }
 
-    // Фильтрация по количеству билетов
     if (ticketsRange) {
         if (ticketsRange === 'upTo50') {
-            query.availableTickets = { $lte: 50 }; // Билетов меньше или равно 50
+            query.availableTickets = { $lte: 50 };
         } else if (ticketsRange === 'over51') {
-            query.availableTickets = { $gte: 51 }; // Билетов больше или равно 51
+            query.availableTickets = { $gte: 51 };
         }
     }
 
-    // Фильтрация по категории (если уже есть или планируется)
     if (category && category !== 'all') {
         query.category = category;
     }
 
-    // Поиск по названию или описанию
     if (search) {
-        // Используем $regex для поиска подстроки и $options: 'i' для регистронезависимого поиска
         query.$or = [
             { title: { $regex: search, $options: 'i' } },
             { description: { $regex: search, $options: 'i' } }
         ];
     }
 
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 5;
+    const skip = (pageNum - 1) * limitNum;
 
-    const events = await Event.find(query) // Используем сформированный query
+    let sort = {};
+    if (sortOrder === 'desc') {
+        sort.title = -1;
+    } else {
+        sort.title = 1;
+    }
+
+    const totalEvents = await Event.countDocuments(query);
+
+    const events = await Event.find(query)
         .populate('createdBy', 'name email')
         .populate('comments.user', 'name')
         .populate('likes', 'name email')
-        .populate('dislikes', 'name email');
+        .populate('dislikes', 'name email')
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum);
 
-    res.json(events);
+    res.json({
+        events,
+        totalEvents,
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalEvents / limitNum),
+    });
 });
 
 const getEventById = asyncHandler(async (req, res) => {
@@ -142,93 +158,152 @@ const toggleLikeEvent = asyncHandler(async (req, res) => {
     console.log('toggleLikeEvent: Запрос получен!', 'Event ID:', req.params.id, 'User ID:', req.user?._id);
 
     const event = await Event.findById(req.params.id);
+    const user = req.user; // Пользователь, который поставил/убрал лайк
 
-    if (event) {
-        const userId = req.user._id;
-
-        if (event.likes.includes(userId)) {
-            event.likes = event.likes.filter(
-                (id) => id.toString() !== userId.toString()
-            );
-        } else {
-            event.likes.push(userId);
-            event.dislikes = event.dislikes.filter(
-                (id) => id.toString() !== userId.toString()
-            );
-        }
-        await event.save();
-
-        const updatedEvent = await Event.findById(req.params.id)
-            .populate('createdBy', 'name email')
-            .populate('likes', 'name email')
-            .populate('dislikes', 'name email')
-            .populate('comments.user', 'name');
-
-        res.json({ message: 'Like updated', event: updatedEvent });
-    } else {
+    if (!event) {
         res.status(404);
         throw new Error('Event not found');
     }
+
+    const userId = user._id;
+    let notificationType;
+
+    if (event.likes.includes(userId)) {
+        // Пользователь убирает лайк
+        event.likes = event.likes.filter((id) => id.toString() !== userId.toString());
+        notificationType = 'like_removed';
+    } else {
+        // Пользователь ставит лайк
+        event.likes.push(userId);
+        event.dislikes = event.dislikes.filter((id) => id.toString() !== userId.toString()); // Убираем дизлайк, если был
+        notificationType = 'new_like';
+    }
+    await event.save();
+
+    // Создаем уведомление для админа
+    // Текст уведомления не генерируем здесь, а передаем данные для локализации на фронтенде
+    await Notification.create({
+        user: userId, // Пользователь, который инициировал действие
+        type: notificationType,
+        title: '', // Оставляем пустым, будет формироваться на фронтенде
+        message: '', // Оставляем пустым, будет формироваться на фронтенде
+        read: false,
+        relatedEntity: {
+            id: event._id,
+            type: 'Event',
+            eventTitle: event.title,
+            userName: user.name,
+            userEmail: user.email,
+        },
+    });
+
+    const updatedEvent = await Event.findById(req.params.id)
+        .populate('createdBy', 'name email')
+        .populate('likes', 'name email')
+        .populate('dislikes', 'name email')
+        .populate('comments.user', 'name');
+
+    res.json({ message: 'Like updated', event: updatedEvent });
 });
 
 const toggleDislikeEvent = asyncHandler(async (req, res) => {
     console.log('toggleDislikeEvent: Запрос получен!', 'Event ID:', req.params.id, 'User ID:', req.user?._id);
 
     const event = await Event.findById(req.params.id);
+    const user = req.user; // Пользователь, который поставил/убрал дизлайк
 
-    if (event) {
-        const userId = req.user._id;
-
-        if (event.dislikes.includes(userId)) {
-            event.dislikes = event.dislikes.filter(
-                (id) => id.toString() !== userId.toString()
-            );
-        } else {
-            event.dislikes.push(userId);
-            event.likes = event.likes.filter(
-                (id) => id.toString() !== userId.toString()
-            );
-        }
-        await event.save();
-
-        const updatedEvent = await Event.findById(req.params.id)
-            .populate('createdBy', 'name email')
-            .populate('likes', 'name email')
-            .populate('dislikes', 'name email')
-            .populate('comments.user', 'name');
-
-        res.json({ message: 'Dislike updated', event: updatedEvent });
-    } else {
+    if (!event) {
         res.status(404);
         throw new Error('Event not found');
     }
+
+    const userId = user._id;
+    let notificationType;
+
+    if (event.dislikes.includes(userId)) {
+        // Пользователь убирает дизлайк
+        event.dislikes = event.dislikes.filter(
+            (id) => id.toString() !== userId.toString()
+        );
+        notificationType = 'dislike_removed';
+    } else {
+        // Пользователь ставит дизлайк
+        event.dislikes.push(userId);
+        event.likes = event.likes.filter(
+            (id) => id.toString() !== userId.toString()
+        ); // Убираем лайк, если был
+        notificationType = 'new_dislike';
+    }
+    await event.save();
+
+    // Создаем уведомление для админа
+    await Notification.create({
+        user: userId,
+        type: notificationType,
+        title: '', // Оставляем пустым, будет формироваться на фронтенде
+        message: '', // Оставляем пустым, будет формироваться на фронтенде
+        read: false,
+        relatedEntity: {
+            id: event._id,
+            type: 'Event',
+            eventTitle: event.title,
+            userName: user.name,
+            userEmail: user.email,
+        },
+    });
+
+    const updatedEvent = await Event.findById(req.params.id)
+        .populate('createdBy', 'name email')
+        .populate('likes', 'name email')
+        .populate('dislikes', 'name email')
+        .populate('comments.user', 'name');
+
+    res.json({ message: 'Dislike updated', event: updatedEvent });
 });
 
 
 const addComment = asyncHandler(async (req, res) => {
     const { text } = req.body;
     const event = await Event.findById(req.params.id);
+    const user = req.user; // Пользователь, который оставил комментарий
 
-    if (event) {
-        const comment = {
-            user: req.user._id,
-            name: req.user.name,
-            text,
-        };
-        event.comments.push(comment);
-        await event.save();
-
-        const updatedEvent = await Event.findById(req.params.id)
-            .populate('createdBy', 'name email')
-            .populate('likes', 'name email')
-            .populate('dislikes', 'name email')
-            .populate('comments.user', 'name');
-
-        res.status(201).json({ message: 'Comment added', event: updatedEvent });
-    } else {
+    if (!event) {
         res.status(404);
         throw new Error('Event not found');
     }
+
+    const comment = {
+        user: user._id,
+        name: user.name,
+        text,
+    };
+    event.comments.push(comment);
+    await event.save();
+
+    // Создание уведомления для админа
+    await Notification.create({
+        user: user._id, // Пользователь, который оставил комментарий
+        type: 'new_comment',
+        title: '', // Оставляем пустым, будет формироваться на фронтенде
+        message: '', // Оставляем пустым, будет формироваться на фронтенде
+        read: false,
+        relatedEntity: {
+            id: event._id,
+            type: 'Event',
+            eventTitle: event.title,
+            userName: user.name,
+            userEmail: user.email,
+            commentText: text, // Добавляем текст комментария
+        },
+    });
+
+    const updatedEvent = await Event.findById(req.params.id)
+        .populate('createdBy', 'name email')
+        .populate('likes', 'name email')
+        .populate('dislikes', 'name email')
+        .populate('comments.user', 'name');
+
+    res.status(201).json({ message: 'Comment added', event: updatedEvent });
 });
 
 const deleteComment = asyncHandler(async (req, res) => {
@@ -273,88 +348,20 @@ const getFeaturedEvents = asyncHandler(async (req, res) => {
 });
 
 const getAdminNotifications = asyncHandler(async (req, res) => {
+    // Проверяем, является ли пользователь админом
     if (req.user.role !== 'admin') {
         res.status(403);
         throw new Error('Not authorized to view admin notifications');
     }
 
-    const adminEvents = await Event.find({ createdBy: req.user._id })
-        .populate('likes', 'name email')
-        .populate('dislikes', 'name email')
-        .populate('comments.user', 'name email')
-        .select('title likes dislikes comments');
-
-    let notifications = [];
-
-    adminEvents.forEach(event => {
-        if (event.likes && Array.isArray(event.likes)) {
-            event.likes.forEach(likeUser => {
-                if (likeUser && likeUser.name) {
-                    notifications.push({
-                        type: 'like',
-                        eventId: event._id,
-                        eventTitle: event.title,
-                        user: {
-                            _id: likeUser._id,
-                            name: likeUser.name,
-                            email: likeUser.email
-                        },
-                        createdAt: event.createdAt || new Date(),
-                        message: `${likeUser.name} liked your event "${event.title}"`
-                    });
-                }
-            });
-        }
-
-
-        if (event.dislikes && Array.isArray(event.dislikes)) {
-            event.dislikes.forEach(dislikeUser => {
-                if (dislikeUser && dislikeUser.name) {
-                    notifications.push({
-                        type: 'dislike',
-                        eventId: event._id,
-                        eventTitle: event.title,
-                        user: {
-                            _id: dislikeUser._id,
-                            name: dislikeUser.name,
-                            email: dislikeUser.email
-                        },
-                        createdAt: event.createdAt || new Date(),
-                        message: `${dislikeUser.name} disliked your event "${event.title}"`
-                    });
-                }
-            });
-        }
-
-
-        if (event.comments && Array.isArray(event.comments)) {
-            event.comments.forEach(comment => {
-                if (comment.user && comment.user._id && comment.user._id.toString() !== req.user._id.toString()) {
-                    notifications.push({
-                        type: 'comment',
-                        eventId: event._id,
-                        eventTitle: event.title,
-                        user: {
-                            _id: comment.user._id,
-                            name: comment.user.name,
-                            email: comment.user.email
-                        },
-                        text: comment.text,
-                        createdAt: comment.createdAt,
-                        message: `${comment.user.name} commented on your event "${event.title}": "${comment.text}"`
-                    });
-                }
-            });
-        }
-    });
-
-    notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Получаем уведомления из коллекции Notification, отсортированные по дате создания
+    const notifications = await Notification.find({})
+        .populate('user', 'name email') // Если есть ссылка на пользователя, подтягиваем его данные
+        .sort({ createdAt: -1 }); // Сортируем по убыванию даты создания (самые новые сверху)
 
     res.json(notifications);
 });
 
-
-// Новый контроллер для покупки билетов
 const buyTickets = asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     const { numberOfTickets } = req.body;
@@ -377,22 +384,10 @@ const buyTickets = asyncHandler(async (req, res) => {
         throw new Error('Недостаточно билетов в наличии');
     }
 
-    // Уменьшаем количество доступных билетов
     event.availableTickets -= numberOfTickets;
-
-    // TODO: Здесь можно добавить логику записи покупки в коллекцию Booking,
-    // если у вас есть такая. Например:
-    // const booking = new Booking({
-    //     user: userId,
-    //     event: eventId,
-    //     numberOfTickets,
-    //     totalPrice: event.price * numberOfTickets,
-    // });
-    // await booking.save();
 
     await event.save();
 
-    // Отправляем обновленное событие
     const updatedEvent = await Event.findById(eventId)
         .populate('createdBy', 'name email')
         .populate('likes', 'name email')
@@ -402,6 +397,39 @@ const buyTickets = asyncHandler(async (req, res) => {
     res.json({
         message: `Успешно куплено ${numberOfTickets} билетов на событие "${event.title}"!`,
         event: updatedEvent
+    });
+});
+
+
+const sendSupportMessage = asyncHandler(async (req, res) => {
+    const { subject, message } = req.body;
+    const user = req.user;
+
+    if (!subject || !message) {
+        res.status(400);
+        throw new Error('Please add a subject and message');
+    }
+
+    // Создаем уведомление, сохраняя только тип и связанные данные
+    const newNotification = await Notification.create({
+        user: user._id,
+        type: 'support_message', // Используем этот тип для определения на фронтенде
+        title: '', // Оставляем пустым, будет сформировано на фронтенде
+        message: '', // Оставляем пустым, будет сформировано на фронтенде
+        read: false,
+        relatedEntity: {
+            id: user._id, // ID пользователя, отправившего сообщение
+            type: 'SupportMessage', // Тип сущности
+            userName: user.name,
+            userEmail: user.email,
+            supportSubject: subject, // Тема сообщения
+            supportMessage: message, // Текст сообщения
+        },
+    });
+
+    res.status(200).json({
+        message: 'Support message sent successfully', // Это сообщение тоже можно перевести на фронтенде
+        notification: newNotification,
     });
 });
 
@@ -418,5 +446,6 @@ module.exports = {
     deleteComment,
     getFeaturedEvents,
     getAdminNotifications,
-    buyTickets, // Экспортируем новый контроллер
+    buyTickets,
+    sendSupportMessage,
 };

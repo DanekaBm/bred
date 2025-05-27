@@ -71,7 +71,7 @@ function LoginPage() {
             />
             <button type="submit" style={{
                 padding: '12px 20px',
-                backgroundColor: 'var(--button-bg-color)',
+                backgroundColor: '#3d414a',
                 color: 'var(--button-text-color)',
                 border: 'none',
                 borderRadius: '5px',

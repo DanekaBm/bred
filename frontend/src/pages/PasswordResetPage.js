@@ -88,7 +88,7 @@ const PasswordResetPage = () => {
                 />
                 <button
                     type="submit"
-                    style={{ padding: '10px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    style={{ padding: '10px 15px', backgroundColor: '#3d414a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                     {t('reset_and_set_password_button')}
                 </button>

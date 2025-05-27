@@ -1,6 +1,21 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import API from '../../api'; // Убедитесь, что ваш API инстанс корректно импортирован
 
+// --- НОВЫЙ ASYNC THUNK ДЛЯ СООБЩЕНИЙ ПОДДЕРЖКИ ---
+export const sendSupportMessage = createAsyncThunk(
+    'events/sendSupportMessage',
+    async (messageData, { rejectWithValue }) => {
+        try {
+            // Измените '/support' на '/events/support'
+            const response = await API.post('/events/support', messageData);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || error.message);
+        }
+    }
+);
+// --- КОНЕЦ НОВОГО ASYNC THUNK ---
+
 export const fetchAllEvents = createAsyncThunk(
     'events/fetchAllEvents',
     // Изменено: теперь принимает `params` в качестве первого аргумента
@@ -136,23 +151,48 @@ const eventsSlice = createSlice({
         currentEvent: null,
         status: 'idle',
         error: null,
+        totalEvents: 0, // Добавлено для хранения общего количества событий
+        // --- НОВОЕ СОСТОЯНИЕ ДЛЯ СООБЩЕНИЙ ПОДДЕРЖКИ ---
+        supportMessageStatus: {
+            status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+            error: null,
+        },
+        // --- КОНЕЦ НОВОГО СОСТОЯНИЯ ---
     },
     reducers: {
         // Здесь можно добавить любые синхронные редьюсеры, если они нужны.
     },
     extraReducers: (builder) => {
         builder
+            // --- ОБРАБОТЧИКИ ДЛЯ sendSupportMessage ---
+            .addCase(sendSupportMessage.pending, (state) => {
+                state.supportMessageStatus.status = 'loading';
+                state.supportMessageStatus.error = null;
+            })
+            .addCase(sendSupportMessage.fulfilled, (state) => {
+                state.supportMessageStatus.status = 'succeeded';
+                state.supportMessageStatus.error = null;
+            })
+            .addCase(sendSupportMessage.rejected, (state, action) => {
+                state.supportMessageStatus.status = 'failed';
+                state.supportMessageStatus.error = action.payload;
+            })
+            // --- КОНЕЦ ОБРАБОТЧИКОВ sendSupportMessage ---
+
             .addCase(fetchAllEvents.pending, (state) => {
                 state.status = 'loading';
             })
             .addCase(fetchAllEvents.fulfilled, (state, action) => {
                 state.status = 'succeeded';
-                state.allEvents = action.payload;
+                // Предполагаем, что payload содержит { events: [], totalEvents: number }
+                state.allEvents = action.payload.events;
+                state.totalEvents = action.payload.totalEvents;
             })
             .addCase(fetchAllEvents.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.payload;
                 state.allEvents = [];
+                state.totalEvents = 0;
             })
             .addCase(fetchEventById.pending, (state) => {
                 state.status = 'loading';
@@ -168,7 +208,9 @@ const eventsSlice = createSlice({
                 state.currentEvent = null;
             })
             .addCase(createEvent.fulfilled, (state, action) => {
-                state.allEvents.push(action.payload);
+                // Если добавление нового элемента должно влиять на текущий список,
+                // возможно, потребуется повторный запрос fetchAllEvents, чтобы получить его с учетом пагинации.
+                // state.allEvents.push(action.payload);
             })
             .addCase(updateEvent.fulfilled, (state, action) => {
                 const index = state.allEvents.findIndex(event => event._id === action.payload._id);
@@ -184,6 +226,7 @@ const eventsSlice = createSlice({
                 if (state.currentEvent && state.currentEvent._id === action.payload) {
                     state.currentEvent = null;
                 }
+                // Также потребуется перезагрузка списка для корректной пагинации после удаления.
             })
             .addCase(toggleLikeEvent.fulfilled, (state, action) => {
                 const updatedEventPayload = action.payload;

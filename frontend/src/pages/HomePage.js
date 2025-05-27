@@ -139,7 +139,7 @@ function HomePage() {
                     <div style={{ display: 'flex', gap: '15px' }}>
                         <Link to="/profile" style={{
                             padding: '10px 15px',
-                            backgroundColor: 'var(--button-bg-color)',
+                            backgroundColor: '#3d414a',
                             color: 'var(--button-text-color)',
                             borderRadius: '5px',
                             textDecoration: 'none',
@@ -148,7 +148,7 @@ function HomePage() {
                         {user.role === 'admin' && (
                             <Link to="/admin/events" style={{
                                 padding: '10px 15px',
-                                backgroundColor: 'var(--button-bg-color)',
+                                backgroundColor: '#3d414a',
                                 color: 'var(--button-text-color)',
                                 borderRadius: '5px',
                                 textDecoration: 'none',
@@ -157,7 +157,7 @@ function HomePage() {
                         )}
                         <Link to="/events" style={{
                             padding: '10px 15px',
-                            backgroundColor: 'var(--button-bg-color)',
+                            backgroundColor: '#3d414a',
                             color: 'var(--button-text-color)',
                             borderRadius: '5px',
                             textDecoration: 'none',

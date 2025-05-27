@@ -5,7 +5,31 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 
-import { fetchAllEvents } from '../redux/slices/eventsSlice'; // Удалены toggleLikeEvent, addEventComment, deleteEventComment
+import { fetchAllEvents } from '../redux/slices/eventsSlice';
+import Pagination from '../components/Pagination'; // Импортируем компонент пагинации
+
+// --- НОВЫЕ ИМПОРТЫ ДЛЯ ПОДДЕРЖКИ ---
+import SupportFormModal from '../components/SupportFormModal'; // Импортируем новый компонент модального окна
+import { FaQuestionCircle } from 'react-icons/fa'; // Импортируем иконку для кнопки
+// --- КОНЕЦ НОВЫХ ИМПОРТОВ ---
+
+// --- Утилита для debounce (можно вынести в отдельный файл, например, src/hooks/useDebounce.js) ---
+function useDebounce(value, delay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+}
+// --- Конец утилиты debounce ---
 
 function EventListPage() {
     const dispatch = useDispatch();
@@ -14,15 +38,25 @@ function EventListPage() {
     const events = useSelector(state => state.events.allEvents);
     const eventsStatus = useSelector(state => state.events.status);
     const error = useSelector(state => state.events.error);
+    const totalEvents = useSelector(state => state.events.totalEvents); // Получаем общее количество событий
 
-    // Состояния для сортировки и поиска
+    // Состояния для фильтрации и сортировки
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOrder, setSortOrder] = useState('asc'); // 'asc' для А-Я, 'desc' для Я-А
     const [priceFilter, setPriceFilter] = useState('');
     const [ticketsFilter, setTicketsFilter] = useState('');
 
+    // Состояния для пагинации
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(5); // Количество элементов на страницу (можно сделать настраиваемым)
 
-    const formatLocalizedDateTime = (isoString) => {
+    // --- НОВОЕ СОСТОЯНИЕ ДЛЯ МОДАЛЬНОГО ОКНА ПОДДЕРЖКИ ---
+    const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+    // --- КОНЕЦ НОВОГО СОСТОЯНИЯ ---
+
+    const debouncedSearchTerm = useDebounce(searchTerm, 500); // Задержка 500 мс
+
+    const formatLocalizedDateTime = useCallback((isoString) => {
         if (!isoString) return '';
         try {
             const dateObj = new Date(isoString);
@@ -32,63 +66,90 @@ function EventListPage() {
             console.error("Error formatting date:", e);
             return isoString;
         }
-    };
+    }, [i18n.language]); // Зависимость от i18n.language
 
-    useEffect(() => {
-        if (eventsStatus === 'idle') {
-            dispatch(fetchAllEvents());
-        }
-    }, [eventsStatus, dispatch]);
-
-    const handleFetchEvents = useCallback(() => {
+    // Функция для загрузки событий с параметрами
+    const loadEvents = useCallback(() => {
         const params = {
+            page: currentPage,
+            limit: itemsPerPage,
+            searchTerm: debouncedSearchTerm,
+            sortOrder: sortOrder,
             priceRange: priceFilter,
             ticketsRange: ticketsFilter,
-            // Сортировка (sortOrder) будет обрабатываться на фронтенде после получения данных,
-            // если вы не хотите передавать ее на бэкенд для запроса к БД.
-            // Если нужно, добавьте 'sortOrder' в params и обработайте на бэкенде.
         };
         dispatch(fetchAllEvents(params));
-    }, [dispatch, priceFilter, ticketsFilter]); // Зависимости для useCallback
+    }, [
+        dispatch,
+        currentPage,
+        itemsPerPage,
+        debouncedSearchTerm,
+        sortOrder,
+        priceFilter,
+        ticketsFilter
+    ]);
 
+    // Эффект для загрузки событий при изменении зависимостей
     useEffect(() => {
-        // Загружаем события при первом рендере и при изменении фильтров/поиска
-        handleFetchEvents();
-    }, [handleFetchEvents]); // Зависимость от мемоизированной функции
+        loadEvents();
+    }, [loadEvents]); // Зависимость от мемоизированной функции loadEvents
 
+    // Обработчик изменения страницы
+    const handlePageChange = useCallback((page) => {
+        // Если пользователь пытается перейти на текущую страницу, или страница выходит за границы
+        const calculatedTotalPages = Math.ceil(totalEvents / itemsPerPage);
+        if (page === currentPage || page < 1 || page > calculatedTotalPages) return;
 
-    // Логика фильтрации и сортировки событий
-    const filteredAndSortedEvents = useMemo(() => {
-        let currentEvents = [...events]; // Создаем копию для мутаций
+        setCurrentPage(page);
+    }, [currentPage, totalEvents, itemsPerPage]);
 
-        // 1. Фильтрация по поисковому запросу
-        if (searchTerm) {
-            currentEvents = currentEvents.filter(event =>
-                event.title.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
+    // Обновляем общую логику фильтрации и сортировки, предполагая, что это теперь на бэкенде.
+    // `events` уже приходят отфильтрованными, отсортированными и пагинированными.
+    const displayedEvents = useMemo(() => {
+        return events;
+    }, [events]);
 
-        // 2. Сортировка по названию
-        currentEvents.sort((a, b) => {
-            const titleA = a.title.toLowerCase();
-            const titleB = b.title.toLowerCase();
+    const totalPages = Math.ceil(totalEvents / itemsPerPage);
 
-            if (sortOrder === 'asc') {
-                return titleA.localeCompare(titleB); // Сортировка А-Я
-            } else {
-                return titleB.localeCompare(titleA); // Сортировка Я-А
-            }
-        });
-
-        return currentEvents;
-    }, [events, searchTerm, sortOrder]); // Пересчитываем только при изменении этих зависимостей
+    // --- ОБРАБОТЧИКИ ОТКРЫТИЯ/ЗАКРЫТИЯ МОДАЛЬНОГО ОКНА ПОДДЕРЖКИ ---
+    const openSupportModal = () => setIsSupportModalOpen(true);
+    const closeSupportModal = () => setIsSupportModalOpen(false);
+    // --- КОНЕЦ ОБРАБОТЧИКОВ ---
 
     if (eventsStatus === 'loading') return <p style={{ color: 'var(--text-color)' }}>{t('loading_events')}</p>;
     if (eventsStatus === 'failed') return <p style={{ color: 'var(--red-button-bg)' }}>{error}</p>;
 
     return (
         <div style={{ color: 'var(--text-color)' }}>
-            <h2>{t('event_list')}</h2>
+            <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {t('event_list')}
+                {/* --- КНОПКА ПОДДЕРЖКИ --- */}
+                <button
+                    onClick={openSupportModal}
+                    style={{
+                        padding: '10px 15px',
+                        backgroundColor: '#3d414a',
+                        color: 'var(--button-text-color)',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '1em',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: 'background-color 0.3s ease',
+                    }}
+                >
+                    <FaQuestionCircle size={20} /> {/* Иконка */}
+                    {t('support_button_label')}
+                </button>
+                {/* --- КОНЕЦ КНОПКИ ПОДДЕРЖКИ --- */}
+            </h2>
+
+            {/* --- МОДАЛЬНОЕ ОКНО ПОДДЕРЖКИ --- */}
+            <SupportFormModal isOpen={isSupportModalOpen} onClose={closeSupportModal} />
+            {/* --- КОНЕЦ МОДАЛЬНОГО ОКНА --- */}
 
             {/* Блок поиска и сортировки */}
             <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
@@ -96,7 +157,11 @@ function EventListPage() {
                     type="text"
                     placeholder={t('search_by_title')}
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        // При изменении поискового запроса, сбрасываем на первую страницу
+                        if (currentPage !== 1) setCurrentPage(1);
+                    }}
                     style={{
                         padding: '10px',
                         borderRadius: '5px',
@@ -108,7 +173,11 @@ function EventListPage() {
                 />
                 <select
                     value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
+                    onChange={(e) => {
+                        setSortOrder(e.target.value);
+                        // При изменении сортировки, сбрасываем на первую страницу
+                        if (currentPage !== 1) setCurrentPage(1);
+                    }}
                     style={{
                         padding: '10px',
                         borderRadius: '5px',
@@ -130,7 +199,11 @@ function EventListPage() {
                 <select
                     id="priceFilter"
                     value={priceFilter}
-                    onChange={(e) => setPriceFilter(e.target.value)}
+                    onChange={(e) => {
+                        setPriceFilter(e.target.value);
+                        // При изменении фильтра, сбрасываем на первую страницу
+                        if (currentPage !== 1) setCurrentPage(1);
+                    }}
                     style={{
                         padding: '8px',
                         borderRadius: '5px',
@@ -146,14 +219,18 @@ function EventListPage() {
             </div>
 
             {/* Фильтр по количеству билетов */}
-            <div>
+            <div style={{ marginBottom: '20px' }}>
                 <label htmlFor="ticketsFilter" style={{ marginRight: '10px', color: 'var(--text-color)' }}>
                     {t('filter_by_tickets')}:
                 </label>
                 <select
                     id="ticketsFilter"
                     value={ticketsFilter}
-                    onChange={(e) => setTicketsFilter(e.target.value)}
+                    onChange={(e) => {
+                        setTicketsFilter(e.target.value);
+                        // При изменении фильтра, сбрасываем на первую страницу
+                        if (currentPage !== 1) setCurrentPage(1);
+                    }}
                     style={{
                         padding: '8px',
                         borderRadius: '5px',
@@ -167,45 +244,55 @@ function EventListPage() {
                     <option value="over51">{t('over_51')}</option>
                 </select>
             </div>
-    {/* Конец блока поиска и сортировки */}
 
-            {filteredAndSortedEvents.length === 0 ? (
+            {totalEvents === 0 && eventsStatus === 'succeeded' ? ( // Проверяем totalEvents и статус
                 <p>{t('no_events_found')}</p>
             ) : (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {filteredAndSortedEvents.map((event) => (
-                        <li key={event._id} style={{
-                            marginBottom: '20px',
-                            padding: '20px',
-                            border: '1px solid var(--card-border-color)',
-                            borderRadius: '8px',
-                            backgroundColor: 'var(--card-bg-color)',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-                            transition: 'background-color 0.3s ease, border-color 0.3s ease'
-                        }}>
+                <>
+                    <ul style={{ listStyle: 'none', padding: 0 }}>
+                        {displayedEvents.map((event) => (
+                            <li key={event._id} style={{
+                                marginBottom: '20px',
+                                padding: '20px',
+                                border: '1px solid var(--card-border-color)',
+                                borderRadius: '8px',
+                                backgroundColor: 'var(--card-bg-color)',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                                transition: 'background-color 0.3s ease, border-color 0.3s ease'
+                            }}>
 
-                            {event.image && (
-                                <img
-                                    src={`http://localhost:5001${event.image}`}
-                                    alt={event.title}
-                                    style={{
-                                        width: '100%',
-                                        height: '200px',
-                                        objectFit: 'cover',
-                                        borderRadius: '8px 8px 0 0',
-                                        marginBottom: '15px'
-                                    }}
-                                />
-                            )}
+                                {event.image && (
+                                    <img
+                                        src={`http://localhost:5001${event.image}`}
+                                        alt={event.title}
+                                        style={{
+                                            width: '100%',
+                                            height: '200px',
+                                            objectFit: 'cover',
+                                            borderRadius: '8px 8px 0 0',
+                                            marginBottom: '15px'
+                                        }}
+                                    />
+                                )}
 
-                            <Link to={`/events/${event._id}`} style={{ textDecoration: 'none', color: 'var(--link-color)' }}>
-                                <h3>{event.title}</h3>
-                            </Link>
-                            <p style={{ color: 'var(--text-color)' }}><strong>{t('location_label')}</strong> {event.location}</p>
-                            <p style={{ color: 'var(--text-color)' }}><strong>{t('date_label')}</strong> {formatLocalizedDateTime(event.date)}</p>
-                        </li>
-                    ))}
-                </ul>
+                                <Link to={`/events/${event._id}`} style={{ textDecoration: 'none', color: 'var(--link-color)' }}>
+                                    <h3>{event.title}</h3>
+                                </Link>
+                                <p style={{ color: 'var(--text-color)' }}><strong>{t('location_label')}</strong> {event.location}</p>
+                                <p style={{ color: 'var(--text-color)' }}><strong>{t('date_label')}</strong> {formatLocalizedDateTime(event.date)}</p>
+                            </li>
+                        ))}
+                    </ul>
+
+                    {/* Компонент пагинации */}
+                    {totalPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
+                    )}
+                </>
             )}
         </div>
     );

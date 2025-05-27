@@ -45,20 +45,23 @@ const Header = () => {
                     alignItems: 'center',
                     gap: '20px'
                 }}>
-                    <li><Link to="/events">{t('events')}</Link></li>
 
                     {user ? (
                         <>
+                            <li><Link to="/events">{t('events')}</Link></li>
                             <li><Link to="/profile">{t('profile')}</Link></li>
                             <li><Link to="/my-tickets">{t('my_tickets')}</Link></li>
 
                             {user.role === 'admin' && (
                                 <>
-                                    <li><Link to="/admin/events">{t('admin_dashboard')}</Link></li>
-                                    {/* НОВАЯ КНОПКА-КОЛОКОЛЬЧИК */}
+                                    <li><Link to="/admin">{t('admin_dashboard')}</Link></li>
                                     <li>
-                                        <Link to="/admin/notifications" style={{ position: 'relative', color: 'var(--header-text-color)', textDecoration: 'none' }}>
-                                            <FaBell size={20} />
+                                        <Link to="/admin/notifications" style={{
+                                            position: 'relative',
+                                            color: 'var(--header-text-color)',
+                                            textDecoration: 'none'
+                                        }}>
+                                            <FaBell size={20}/>
                                             {/* Можно добавить значок с количеством непрочитанных уведомлений, если у вас есть unreadCount */}
                                             {/* {unreadCount > 0 && (
                                                 <span style={{
@@ -82,11 +85,13 @@ const Header = () => {
                                     </li>
                                 </>
                             )}
-                            <li><button onClick={handleLogout}>{t('logout')} ({user.name})</button></li>
+                            <li>
+                                <button onClick={handleLogout}>{t('logout')} ({user.name})</button>
+                            </li>
                         </>
                     ) : (
                         <>
-                            <li><Link to="/register">{t('register')}</Link></li>
+                        <li><Link to="/register">{t('register')}</Link></li>
                             <li><Link to="/login">{t('login')}</Link></li>
                             <li><Link to="/password-reset">{t('password_reset')}</Link></li>
                         </>

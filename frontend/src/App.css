@@ -1,5 +1,82 @@
+/* --- Основные переменные темы (более пастельные бежевые тона) --- */
+:root {
+  /* Пастельные бежевые тона */
+  --beige-lightest: #fcf8f0; /* Очень светлый, почти белый пастельный бежевый */
+  --beige-light: #f3edd9;   /* Светлый пастельный бежевый - для карточек/основного контента */
+  --beige-medium: #e7dac2;  /* Средний пастельный бежевый/персиковый - для акцентов/кнопок */
+  --beige-dark: #ccb997;    /* Темный пастельный бежевый/золотистый - для акцентов/hover */
+  --beige-accent: #b0a08d;  /* Дополнительный приглушенный акцентный цвет */
+
+  /* Цвета текста (остаются похожими для читаемости, но можно сделать чуть мягче) */
+  --text-color-dark: #4a4a4a; /* Темно-серый, мягче черного */
+  --text-color-medium: #707070; /* Средне-серый - второстепенный текст */
+  --text-color-light: #fcf8f0; /* Очень светлый пастельный бежевый - для текста на темном фоне */
+
+  /* Цвета для кнопок/ссылок */
+  --button-primary-bg: var(--text-color-dark); /* Кнопки теперь темно-серые */
+  --button-primary-text: var(--text-color-light);
+  --button-hover-bg: var(--beige-dark);
+  --button-hover-text: var(--text-color-light);
+  --link-color: var(--beige-dark);
+  --link-hover-color: var(--beige-accent); /* Чуть темнее для hover */
+
+  /* Цвета границы/разделители */
+  --border-color-light: #e0e0e0; /* Очень светло-серый */
+  --border-color-medium: #c0c0c0; /* Светло-серый */
+
+  /* Цвета уведомлений/сообщений (оставим яркими для заметности, но можно приглушить) */
+  --success-color: #6fb96f; /* Приглушенный зеленый */
+  --error-color: #e57373;   /* Приглушенный красный */
+
+  /* Переменные для общего использования в приложении */
+  --body-bg-color: var(--beige-lightest);
+  --header-bg-color: var(--beige-medium);
+  --card-bg-color: var(--beige-light);
+  --card-border-color: var(--beige-medium);
+  --input-bg-color: var(--beige-lightest);
+
+  /* Используем основные переменные для ваших существующих var(--text-color) и var(--background-color) */
+  --background-color: var(--beige-light); /* Для общих блоков контента */
+  --text-color: var(--text-color-dark); /* Основной цвет текста */
+  --text-color-secondary: var(--text-color-medium); /* Второстепенный цвет текста */
+}
+
+/* --- Глобальные стили для body (применение пастельной бежевой темы) --- */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--body-bg-color); /* Общий фон страницы */
+  color: var(--text-color); /* Основной цвет текста */
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 .App {
   text-align: center;
+}
+
+/* --- Стили для Header/Navbar --- */
+header {
+  background-color: var(--header-bg-color); /* Цвет фона шапки */
+  padding: 10px 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Немного более светлая тень */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-color-dark); /* Цвет текста в шапке */
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-color-dark); /* Цвет логотипа */
+  text-decoration: none;
 }
 
 /* Updated nav styles to be compatible with flexbox and theme variables */
@@ -7,92 +84,382 @@ nav ul {
   list-style-type: none;
   margin: 0;
   padding: 0;
-  /* The background-color for nav is now handled by the header's primary-color */
   overflow: hidden;
   display: flex;
-  justify-content: flex-start; /* Align main nav items to the start */
+  justify-content: flex-start;
   align-items: center;
-  gap: 20px; /* Spacing between main nav items */
+  gap: 20px;
 }
 
-/* REMOVE THIS LINE: 'float: left;' - it conflicts with flexbox */
 nav li {
-  /* float: left; */ /* REMOVE THIS LINE */
+  /* float: left; - уже удалено */
 }
 
 nav li a, nav li button {
   display: block;
-  color: inherit; /* Inherit from Header's color, then overridden by LanguageSwitcher/ThemeSwitcher inline styles */
+  color: inherit;
   text-align: center;
-  padding: 14px 16px;
+  padding: 10px 15px;
   text-decoration: none;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 nav li a:hover, nav li button:hover {
-  background-color: #575757; /* Consider using a CSS variable here too */
+  background-color: var(--beige-dark);
+  color: var(--text-color-light);
 }
 
+/* --- Стили для основного контента (общий .content блок) --- */
 .content {
-  padding: 20px;
-  max-width: 800px;
-  margin: 20px auto;
-  background-color: var(--background-color); /* Use theme variable */
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  max-width: 900px;
+  margin: 30px auto;
+  background-color: var(--card-bg-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Немного более светлая тень */
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* --- Стили для форм --- */
 form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  gap: 15px;
+  padding: 25px;
+  border: 1px solid var(--border-color-medium);
+  border-radius: 10px;
+  background-color: var(--input-bg-color); /* Более светлый фон для формы */
+}
+
+form label {
+  color: var(--text-color);
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-align: left;
 }
 
 form input[type="text"],
 form input[type="email"],
 form input[type="password"],
 form input[type="datetime-local"],
-form textarea {
-  padding: 10px;
-  border: 1px solid var(--text-color); /* Use theme variable for border */
-  border-radius: 4px;
+form textarea,
+form select {
+  padding: 12px;
+  border: 1px solid var(--border-color-light);
+  border-radius: 6px;
   font-size: 16px;
-  background-color: var(--background-color); /* Use theme variable */
-  color: var(--text-color); /* Use theme variable */
+  background-color: var(--input-bg-color);
+  color: var(--text-color-dark);
+  width: -webkit-fill-available;
+  width: -moz-available;
+  width: fill-available;
+}
+
+form input:focus,
+form textarea:focus,
+form select:focus {
+  border-color: var(--beige-dark);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(204, 185, 151, 0.3); /* Тень с более пастельным акцентом */
 }
 
 form button {
-  padding: 10px 15px;
-  color: white;
+  padding: 12px 20px;
+  background-color: var(--button-primary-bg); /* Теперь кнопки всегда темно-серые */
+  color: var(--button-primary-text);
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: bold;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 form button:hover {
+  background-color: var(--button-hover-bg);
+  color: var(--button-hover-text);
 }
 
+/* --- Стили для списков (например, события, пользователи, уведомления) --- */
 ul {
   list-style-type: none;
   padding: 0;
 }
 
 li {
-  background-color: var(--background-color); /* Use theme variable */
-  margin-bottom: 10px;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid var(--text-color); /* Use theme variable for border */
+  background-color: var(--card-bg-color);
+  margin-bottom: 12px;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color-light);
+  text-align: left;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04); /* Еще более легкая тень */
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+li:hover {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08); /* Усиление тени при наведении, но все еще пастельно */
+}
+
+/* --- Дополнительные стили для улучшения внешнего вида --- */
+
+/* Стили для заголовков */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-color-dark);
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+/* Стили для ссылок (не в навигации) */
+a {
+  color: #3d414a;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #3d414a;
+  text-decoration: underline;
+}
+
+/* Стили для кнопок общего назначения */
+button {
+  padding: 10px 15px;
+  background-color: #3d414a; /* Теперь кнопки всегда темно-серые */
+  color: var(--button-primary-text);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button:hover {
+  background-color: var(--button-hover-bg);
+  color: var(--button-hover-text);
+}
+
+/* Стили для сообщений об ошибках/успехе */
+.error-message {
+  color: var(--error-color);
+  background-color: rgba(229, 115, 115, 0.1); /* Более пастельный фон */
+  border: 1px solid var(--error-color);
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.success-message {
+  color: var(--success-color);
+  background-color: rgba(111, 185, 111, 0.1); /* Более пастельный фон */
+  border: 1px solid var(--success-color);
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+/* Стили для футера (если есть) */
+footer {
+  margin-top: 40px;
+  padding: 20px;
+  background-color: var(--header-bg-color);
+  color: var(--text-color-dark);
+  text-align: center;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+}
+
+/* Стили для отдельных элементов внутри li (например, для подробностей события) */
+.event-details-item {
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.event-details-item strong {
+  color: var(--text-color-dark);
+}
+
+/* Стили для переключателей (язык, тема) */
+.language-switcher button,
+.theme-switcher button {
+  background-color: var(--button-primary-bg); /* Теперь кнопки всегда темно-серые */
+  border: 1px solid var(--button-primary-bg); /* Более мягкая граница */
+  color: var(--button-primary-text);
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.language-switcher button:hover,
+.theme-switcher button:hover {
+  background-color: var(--button-hover-bg);
+  color: var(--button-hover-text);
+  border-color: var(--button-hover-bg);
+}
+
+/* --- Стили для зоны фильтрации --- */
+.filter-section {
+  background-color: var(--card-bg-color); /* Используем цвет карточек */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Легкая тень */
+  margin-bottom: 30px;
+  display: flex;
+  flex-wrap: wrap; /* Для адаптивности элементов фильтра */
+  gap: 15px; /* Пространство между элементами фильтра */
+  align-items: flex-end; /* Выравнивание элементов по нижнему краю */
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Позволяет элементам занимать доступное пространство */
+  min-width: 180px; /* Минимальная ширина для каждого фильтра */
+}
+
+.filter-group label {
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: var(--text-color-dark);
   text-align: left;
 }
+
+.filter-section input[type="text"],
+.filter-section select {
+  padding: 10px;
+  border: 1px solid var(--border-color-medium);
+  border-radius: 5px;
+  font-size: 16px;
+  background-color: var(--input-bg-color);
+  color: var(--text-color-dark);
+  width: 100%; /* Занимает всю доступную ширину в группе */
+  box-sizing: border-box; /* Учитывает padding и border в общей ширине */
+}
+
+.filter-section input:focus,
+.filter-section select:focus {
+  border-color: var(--beige-dark);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(204, 185, 151, 0.3);
+}
+
+.filter-section button {
+  padding: 10px 20px;
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  align-self: flex-end; /* Прижимает кнопку к нижнему краю в своей группе */
+}
+
+.filter-section button:hover {
+  background-color: var(--button-hover-bg);
+  color: var(--button-hover-text);
+}
+
+/* Стили для карусели (Slick Carousel) */
 @import "~slick-carousel/slick/slick.css";
 @import "~slick-carousel/slick/slick-theme.css";
 
+/* Переопределение стилей slick для соответствия теме */
+.slick-prev:before, .slick-next:before {
+  color: var(--beige-dark) !important;
+}
 
+.slick-dots li button:before {
+  color: var(--beige-medium) !important;
+}
+
+.slick-dots li.slick-active button:before {
+  color: var(--beige-dark) !important;
+}
+
+/* Медиа-запросы для адаптивности */
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  nav ul {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  nav li a, nav li button {
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  .content {
+    margin: 20px 10px;
+    padding: 15px;
+  }
+
+  form {
+    padding: 15px;
+  }
+
+  form input, form textarea, form select {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  li {
+    padding: 15px;
+  }
+
+  /* Медиа-запросы для адаптивности фильтров */
+  .filter-section {
+    flex-direction: column; /* Элементы фильтра в столбец на узких экранах */
+    align-items: stretch; /* Растянуть элементы по ширине */
+  }
+
+  .filter-group {
+    min-width: unset; /* Отменить минимальную ширину */
+    width: 100%; /* Занимает всю ширину */
+  }
+
+  .filter-section button {
+    width: 100%; /* Растянуть кнопку по ширине */
+    margin-top: 10px; /* Отступ сверху для кнопки */
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 20px;
+  }
+
+  nav ul {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  nav li {
+    width: 100%;
+  }
+
+  nav li a, nav li button {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  form button {
+    font-size: 15px;
+    padding: 10px 15px;
+  }
+}

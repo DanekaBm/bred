@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { getAdminNotifications } from '../services/eventService';
-import { format } from 'date-fns'; // Для форматирования даты
+import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 
 const AdminNotificationsPage = () => {
@@ -16,7 +16,6 @@ const AdminNotificationsPage = () => {
     const [loadingNotifications, setLoadingNotifications] = useState(true);
     const [error, setError] = useState(null);
 
-    // Форматирование даты
     const formatLocalizedDateTime = (isoString) => {
         if (!isoString) return '';
         try {
@@ -54,6 +53,67 @@ const AdminNotificationsPage = () => {
         }
     };
 
+    // Функция для получения локализованного заголовка и сообщения уведомления
+    const getLocalizedNotificationContent = (notif) => {
+        const { type, relatedEntity, user: notificationUser } = notif; // Удаляем title и message из деструктуризации notif
+        let localizedTitle = '';
+        let localizedMessage = '';
+        const userName = notificationUser?.name || t('unknown_user');
+        const userEmail = notificationUser?.email || '';
+
+        switch (type) {
+            case 'new_like':
+                localizedTitle = t('notification_new_like_title', { eventTitle: relatedEntity?.eventTitle });
+                localizedMessage = t('notification_new_like_message', { userName, userEmail, eventTitle: relatedEntity?.eventTitle });
+                break;
+            case 'like_removed':
+                localizedTitle = t('notification_like_removed_title', { eventTitle: relatedEntity?.eventTitle });
+                localizedMessage = t('notification_like_removed_message', { userName, userEmail, eventTitle: relatedEntity?.eventTitle });
+                break;
+            case 'new_dislike':
+                localizedTitle = t('notification_new_dislike_title', { eventTitle: relatedEntity?.eventTitle });
+                localizedMessage = t('notification_new_dislike_message', { userName, userEmail, eventTitle: relatedEntity?.eventTitle });
+                break;
+            case 'dislike_removed':
+                localizedTitle = t('notification_dislike_removed_title', { eventTitle: relatedEntity?.eventTitle });
+                localizedMessage = t('notification_dislike_removed_message', { userName, userEmail, eventTitle: relatedEntity?.eventTitle });
+                break;
+            case 'new_comment':
+                localizedTitle = t('notification_new_comment_title', { eventTitle: relatedEntity?.eventTitle });
+                // Для комментария используем commentText из relatedEntity
+                localizedMessage = t('notification_new_comment_message', { userName, userEmail, eventTitle: relatedEntity?.eventTitle, commentText: relatedEntity?.commentText });
+                break;
+            case 'support_message':
+                // Для support_message используем новые ключи и данные из relatedEntity
+                localizedTitle = t('notification_support_message_title', {
+                    userName: relatedEntity?.userName,
+                    userEmail: relatedEntity?.userEmail,
+                    subject: relatedEntity?.supportSubject
+                });
+                localizedMessage = t('notification_support_message_message', {
+                    message: relatedEntity?.supportMessage
+                });
+                break;
+            // Добавьте другие типы уведомлений, если они у вас есть
+            // Например: 'new_event_created', 'ticket_sold'
+            case 'new_event_created':
+                localizedTitle = t('notification_new_event_created_title', { eventTitle: relatedEntity?.eventTitle });
+                localizedMessage = t('notification_new_event_created_message', { eventTitle: relatedEntity?.eventTitle, userName, userEmail });
+                break;
+            case 'ticket_sold':
+                localizedTitle = t('notification_ticket_sold_title', { eventTitle: relatedEntity?.eventTitle });
+                localizedMessage = t('notification_ticket_sold_message', { userName, userEmail, quantity: relatedEntity?.quantity });
+                break;
+            default:
+                // Если тип неизвестен или не требует специальных данных, используем оригинальные title/message
+                localizedTitle = notif.title || t('no_title'); // Добавьте 'no_title' в локализацию
+                localizedMessage = notif.message || t('no_message'); // Добавьте 'no_message' в локализацию
+                break;
+        }
+        return { localizedTitle, localizedMessage };
+    };
+
+
     if (loading || loadingNotifications) {
         return <p style={{ textAlign: 'center', marginTop: '50px' }}>{t('loading')}...</p>;
     }
@@ -81,47 +141,42 @@ const AdminNotificationsPage = () => {
                 <p style={{ color: 'var(--text-color-secondary)', textAlign: 'center' }}>{t('no_new_notifications')}</p>
             ) : (
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {notifications.map((notif, index) => (
-                        <li key={index} style={{
-                            marginBottom: '15px',
-                            padding: '15px',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '8px',
-                            backgroundColor: 'var(--body-bg-color)',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-                        }}>
-                            <p style={{ margin: '0 0 5px 0', fontSize: '0.9em', color: 'var(--text-color-secondary)' }}>
-                                {formatLocalizedDateTime(notif.createdAt)}
-                            </p>
-                            {notif.type === 'like' && (
-                                <p style={{ margin: '0', color: 'var(--text-color)' }}>
-                                    {t('user_liked_event', { userName: notif.user.name, eventTitle: notif.eventTitle })}
-                                    <Link to={`/events/${notif.eventId}`} style={{ marginLeft: '5px', color: 'var(--link-color)', textDecoration: 'none' }}>
-                                        ({t('view_event')})
-                                    </Link>
+                    {notifications.map((notif, index) => {
+                        const { localizedTitle, localizedMessage } = getLocalizedNotificationContent(notif);
+                        return (
+                            <li key={index} style={{
+                                marginBottom: '15px',
+                                padding: '15px',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                backgroundColor: 'var(--body-bg-color)',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                            }}>
+                                <p style={{ margin: '0 0 5px 0', fontSize: '0.9em', color: 'var(--text-color-secondary)' }}>
+                                    {formatLocalizedDateTime(notif.createdAt)}
                                 </p>
-                            )}
-                            {notif.type === 'dislike' && (
-                                <p style={{ margin: '0', color: 'var(--text-color)' }}>
-                                    {t('user_disliked_event', { userName: notif.user.name, eventTitle: notif.eventTitle })}
-                                    <Link to={`/events/${notif.eventId}`} style={{ marginLeft: '5px', color: 'var(--link-color)', textDecoration: 'none' }}>
-                                        ({t('view_event')})
-                                    </Link>
+                                <p style={{ margin: '0', color: 'var(--text-color)', fontWeight: 'bold' }}>
+                                    {localizedTitle}
                                 </p>
-                            )}
-                            {notif.type === 'comment' && (
-                                <p style={{ margin: '0', color: 'var(--text-color)' }}>
-                                    {t('user_commented_on_event', { userName: notif.user.name, eventTitle: notif.eventTitle, commentText: notif.text })}
-                                    <Link to={`/events/${notif.eventId}`} style={{ marginLeft: '5px', color: 'var(--link-color)', textDecoration: 'none' }}>
-                                        ({t('view_event')})
-                                    </Link>
+                                <p style={{ margin: '5px 0', color: 'var(--text-color)' }}>
+                                    {localizedMessage}
                                 </p>
-                            )}
-                            <p style={{ margin: '5px 0 0 0', fontSize: '0.8em', color: 'var(--text-color-secondary)' }}>
-                                {t('from')}: {notif.user.name} ({notif.user.email})
-                            </p>
-                        </li>
-                    ))}
+
+                                {/* Ссылка на событие, если есть relatedEntity и это событие */}
+                                {notif.relatedEntity && notif.relatedEntity.type === 'Event' && notif.relatedEntity.id && (
+                                    <Link to={`/events/${notif.relatedEntity.id}`} style={{ marginLeft: '5px', color: 'var(--link-color)', textDecoration: 'none' }}>
+                                        {t('view_event')}
+                                    </Link>
+                                )}
+
+                                {notif.user && ( // Проверяем наличие пользователя
+                                    <p style={{ margin: '5px 0 0 0', fontSize: '0.8em', color: 'var(--text-color-secondary)' }}>
+                                        {t('from')}: {notif.user.name} ({notif.user.email})
+                                    </p>
+                                )}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
         </div>

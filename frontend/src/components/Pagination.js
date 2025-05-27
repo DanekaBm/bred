@@ -3,7 +3,46 @@ import { useTranslation } from 'react-i18next';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     const { t } = useTranslation();
-    const pages = [...Array(totalPages).keys()].map(i => i + 1);
+
+    // Улучшенная логика генерации номеров страниц для отображения
+    const getPageNumbers = () => {
+        const pageNumbers = [];
+        const maxPageButtons = 5; // Максимальное количество кнопок страниц для отображения
+
+        if (totalPages <= maxPageButtons) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+            let endPage = Math.min(totalPages, currentPage + Math.floor(maxPageButtons / 2));
+
+            // Корректировка startPage/endPage, чтобы всегда показывать maxPageButtons
+            if (endPage - startPage + 1 < maxPageButtons) {
+                if (startPage === 1) {
+                    endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+                } else if (endPage === totalPages) {
+                    startPage = Math.max(1, totalPages - maxPageButtons + 1);
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                pageNumbers.push(i);
+            }
+            // Добавляем троеточие и первую/последнюю страницу, если они не в текущем диапазоне
+            if (startPage > 1) {
+                if (startPage > 2) pageNumbers.unshift('...'); // Добавляем троеточие
+                pageNumbers.unshift(1); // Добавляем первую страницу
+            }
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) pageNumbers.push('...'); // Добавляем троеточие
+                pageNumbers.push(totalPages); // Добавляем последнюю страницу
+            }
+        }
+        return pageNumbers;
+    };
+
+    const pagesToDisplay = getPageNumbers();
 
     return (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', color: 'var(--text-color)' }}>
@@ -25,25 +64,30 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             >
                 {t('back')}
             </button>
-            {pages.map(page => (
-                <button
-                    key={page}
-                    onClick={() => onPageChange(page)}
-                    style={{
-                        fontWeight: currentPage === page ? 'bold' : 'normal',
-                        margin: '0 5px',
-                        padding: '8px 12px',
-                        backgroundColor: currentPage === page ? 'var(--accent-color)' : 'var(--secondary-color)',
-                        color: currentPage === page ? 'var(--button-text-color)' : 'var(--text-color)',
-                        border: '1px solid var(--input-border-color)',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                        fontSize: '0.9em',
-                        transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease'
-                    }}
-                >
-                    {page}
-                </button>
+            {pagesToDisplay.map((page, index) => (
+                <React.Fragment key={index}>
+                    {page === '...' ? (
+                        <span style={{ margin: '0 5px', padding: '8px 12px', color: 'var(--text-color)' }}>...</span>
+                    ) : (
+                        <button
+                            onClick={() => onPageChange(page)}
+                            style={{
+                                fontWeight: currentPage === page ? 'bold' : 'normal',
+                                margin: '0 5px',
+                                padding: '8px 12px',
+                                backgroundColor: currentPage === page ? 'var(--accent-color)' : 'var(--secondary-color)',
+                                color: currentPage === page ? 'var(--button-text-color)' : 'var(--text-color)',
+                                border: '1px solid var(--input-border-color)',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                                fontSize: '0.9em',
+                                transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease'
+                            }}
+                        >
+                            {page}
+                        </button>
+                    )}
+                </React.Fragment>
             ))}
             <button
                 onClick={() => onPageChange(currentPage + 1)}

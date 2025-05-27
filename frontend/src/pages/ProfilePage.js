@@ -204,7 +204,7 @@ function ProfilePage() {
                         />
                         <button type="submit" style={{
                             padding: '12px 20px',
-                            backgroundColor: 'var(--button-bg-color)',
+                            backgroundColor: '#3d414a',
                             color: 'var(--button-text-color)',
                             border: 'none',
                             borderRadius: '5px',
@@ -231,7 +231,7 @@ function ProfilePage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <label htmlFor="avatar-upload-input" style={{
                                 padding: '10px 15px',
-                                backgroundColor: 'var(--button-bg-color)',
+                                backgroundColor: '#3d414a',
                                 color: 'var(--button-text-color)',
                                 border: 'none',
                                 borderRadius: '5px',
@@ -247,7 +247,7 @@ function ProfilePage() {
                         </div>
                         <button type="submit" disabled={!avatarFile} style={{
                             padding: '12px 20px',
-                            backgroundColor: 'var(--button-bg-color)',
+                            backgroundColor: '#3d414a',
                             color: 'var(--button-text-color)',
                             border: 'none',
                             borderRadius: '5px',
@@ -313,7 +313,7 @@ function ProfilePage() {
                         />
                         <button type="submit" style={{
                             padding: '12px 20px',
-                            backgroundColor: 'var(--button-bg-color)',
+                            backgroundColor: '#3d414a',
                             color: 'var(--button-text-color)',
                             border: 'none',
                             borderRadius: '5px',

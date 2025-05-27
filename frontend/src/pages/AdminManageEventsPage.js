@@ -24,10 +24,8 @@ const AdminManageEventsPage = () => {
         category: '',
         image: '',
         organizer: '',
-        // --- НОВЫЕ ПОЛЯ ДЛЯ БИЛЕТОВ ---
-        price: 0, // Начальное значение по умолчанию
-        availableTickets: 0 // Начальное значение по умолчанию
-        // --- КОНЕЦ НОВЫХ ПОЛЕЙ ---
+        price: 0,
+        availableTickets: 0
     });
     const [selectedFile, setSelectedFile] = useState(null);
 
@@ -363,7 +361,7 @@ const AdminManageEventsPage = () => {
                             onClick={handleButtonClick}
                             style={{
                                 padding: '10px 15px',
-                                backgroundColor: 'var(--button-bg-color)',
+                                backgroundColor: '#3d414a',
                                 color: 'var(--button-text-color)',
                                 border: 'none',
                                 borderRadius: '5px',
@@ -398,7 +396,7 @@ const AdminManageEventsPage = () => {
                 <div style={{ gridColumn: '1 / span 2', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                     <button type="submit" disabled={uploadingImage} style={{
                         padding: '10px 20px',
-                        backgroundColor: 'var(--button-bg-color)',
+                        backgroundColor: '#3d414a',
                         color: 'var(--button-text-color)',
                         border: 'none',
                         borderRadius: '5px',
