@@ -149,7 +149,7 @@ function HomePage() {
                             transition: 'background-color 0.3s ease'
                         }}>{t('view_profile')}</Link>
                         {user.role === 'admin' && (
-                            <Link to="/create-event" style={{
+                            <Link to="/admin/events" style={{
                                 padding: '10px 15px',
                                 backgroundColor: 'var(--button-bg-color)',
                                 color: 'var(--button-text-color)',

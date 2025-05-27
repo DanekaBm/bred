@@ -78,24 +78,6 @@ const AdminPanelPage = () => {
                             {t('manage_events')}
                         </Link>
                     </li>
-                    <li>
-                        <Link to="/admin/statistics" style={{
-                            display: 'block',
-                            width: '100%',
-                            padding: '12px 20px',
-                            backgroundColor: 'var(--button-bg-color)',
-                            color: 'var(--button-text-color)',
-                            textDecoration: 'none',
-                            textAlign: 'center',
-                            border: 'none',
-                            borderRadius: '5px',
-                            cursor: 'pointer',
-                            fontSize: '1em',
-                            transition: 'background-color 0.3s ease, color 0.3s ease'
-                        }}>
-                            {t('view_statistics')}
-                        </Link>
-                    </li>
                 </ul>
             </nav>
         </div>

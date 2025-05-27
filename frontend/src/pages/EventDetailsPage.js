@@ -242,11 +242,9 @@ const EventDetailsPage = () => {
                 </button>
             </div>
 
-            {/* --- РАЗДЕЛ КОММЕНТАРИЕВ --- */}
             <div style={{ marginTop: '30px', borderTop: '1px solid var(--card-border-color)', paddingTop: '20px' }}>
-                <h2 style={{ color: 'var(--text-color)', marginBottom: '20px' }}>{t('comments_heading')}</h2> {/* Добавьте в перевод */}
+                <h2 style={{ color: 'var(--text-color)', marginBottom: '20px' }}>{t('comments')}</h2>
 
-                {/* Форма для добавления комментария */}
                 {user ? (
                     <form onSubmit={handleAddComment} style={{ marginBottom: '30px' }}>
                         <textarea
