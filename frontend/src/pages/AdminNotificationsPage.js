@@ -1,4 +1,4 @@
-// frontend/src/pages/AdminNotificationsPage.js
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -21,7 +21,7 @@ const AdminNotificationsPage = () => {
         try {
             const dateObj = new Date(isoString);
             const locale = i18n.language === 'ru' ? ru : enUS;
-            // Используем 'PPP p' для красивого формата даты и времени
+
             return format(dateObj, 'PPP p', { locale });
         } catch (e) {
             console.error("Error formatting date:", e);
@@ -32,7 +32,7 @@ const AdminNotificationsPage = () => {
     useEffect(() => {
         if (!loading) {
             if (!user || user.role !== 'admin') {
-                navigate('/login'); // Перенаправить, если не админ
+                navigate('/login');
             } else {
                 fetchNotifications();
             }
@@ -53,9 +53,8 @@ const AdminNotificationsPage = () => {
         }
     };
 
-    // Функция для получения локализованного заголовка и сообщения уведомления
     const getLocalizedNotificationContent = (notif) => {
-        const { type, relatedEntity, user: notificationUser } = notif; // Удаляем title и message из деструктуризации notif
+        const { type, relatedEntity, user: notificationUser } = notif;
         let localizedTitle = '';
         let localizedMessage = '';
         const userName = notificationUser?.name || t('unknown_user');
@@ -80,11 +79,11 @@ const AdminNotificationsPage = () => {
                 break;
             case 'new_comment':
                 localizedTitle = t('notification_new_comment_title', { eventTitle: relatedEntity?.eventTitle });
-                // Для комментария используем commentText из relatedEntity
+
                 localizedMessage = t('notification_new_comment_message', { userName, userEmail, eventTitle: relatedEntity?.eventTitle, commentText: relatedEntity?.commentText });
                 break;
             case 'support_message':
-                // Для support_message используем новые ключи и данные из relatedEntity
+
                 localizedTitle = t('notification_support_message_title', {
                     userName: relatedEntity?.userName,
                     userEmail: relatedEntity?.userEmail,
@@ -94,8 +93,8 @@ const AdminNotificationsPage = () => {
                     message: relatedEntity?.supportMessage
                 });
                 break;
-            // Добавьте другие типы уведомлений, если они у вас есть
-            // Например: 'new_event_created', 'ticket_sold'
+
+
             case 'new_event_created':
                 localizedTitle = t('notification_new_event_created_title', { eventTitle: relatedEntity?.eventTitle });
                 localizedMessage = t('notification_new_event_created_message', { eventTitle: relatedEntity?.eventTitle, userName, userEmail });
@@ -105,9 +104,9 @@ const AdminNotificationsPage = () => {
                 localizedMessage = t('notification_ticket_sold_message', { userName, userEmail, quantity: relatedEntity?.quantity });
                 break;
             default:
-                // Если тип неизвестен или не требует специальных данных, используем оригинальные title/message
-                localizedTitle = notif.title || t('no_title'); // Добавьте 'no_title' в локализацию
-                localizedMessage = notif.message || t('no_message'); // Добавьте 'no_message' в локализацию
+
+                localizedTitle = notif.title || t('no_title');
+                localizedMessage = notif.message || t('no_message');
                 break;
         }
         return { localizedTitle, localizedMessage };
@@ -169,7 +168,7 @@ const AdminNotificationsPage = () => {
                                     </Link>
                                 )}
 
-                                {notif.user && ( // Проверяем наличие пользователя
+                                {notif.user && (
                                     <p style={{ margin: '5px 0 0 0', fontSize: '0.8em', color: 'var(--text-color-secondary)' }}>
                                         {t('from')}: {notif.user.name} ({notif.user.email})
                                     </p>

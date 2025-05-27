@@ -6,14 +6,12 @@ import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 
 import { fetchAllEvents } from '../redux/slices/eventsSlice';
-import Pagination from '../components/Pagination'; // Импортируем компонент пагинации
+import Pagination from '../components/Pagination';
 
-// --- НОВЫЕ ИМПОРТЫ ДЛЯ ПОДДЕРЖКИ ---
-import SupportFormModal from '../components/SupportFormModal'; // Импортируем новый компонент модального окна
-import { FaQuestionCircle } from 'react-icons/fa'; // Импортируем иконку для кнопки
-// --- КОНЕЦ НОВЫХ ИМПОРТОВ ---
+import SupportFormModal from '../components/SupportFormModal';
+import { FaQuestionCircle } from 'react-icons/fa';
 
-// --- Утилита для debounce (можно вынести в отдельный файл, например, src/hooks/useDebounce.js) ---
+
 function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -29,7 +27,7 @@ function useDebounce(value, delay) {
 
     return debouncedValue;
 }
-// --- Конец утилиты debounce ---
+
 
 function EventListPage() {
     const dispatch = useDispatch();
@@ -38,23 +36,20 @@ function EventListPage() {
     const events = useSelector(state => state.events.allEvents);
     const eventsStatus = useSelector(state => state.events.status);
     const error = useSelector(state => state.events.error);
-    const totalEvents = useSelector(state => state.events.totalEvents); // Получаем общее количество событий
+    const totalEvents = useSelector(state => state.events.totalEvents);
 
-    // Состояния для фильтрации и сортировки
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' для А-Я, 'desc' для Я-А
+    const [sortOrder, setSortOrder] = useState('asc');
     const [priceFilter, setPriceFilter] = useState('');
     const [ticketsFilter, setTicketsFilter] = useState('');
 
-    // Состояния для пагинации
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(5); // Количество элементов на страницу (можно сделать настраиваемым)
+    const [itemsPerPage] = useState(5);
 
-    // --- НОВОЕ СОСТОЯНИЕ ДЛЯ МОДАЛЬНОГО ОКНА ПОДДЕРЖКИ ---
     const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
-    // --- КОНЕЦ НОВОГО СОСТОЯНИЯ ---
 
-    const debouncedSearchTerm = useDebounce(searchTerm, 500); // Задержка 500 мс
+
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
     const formatLocalizedDateTime = useCallback((isoString) => {
         if (!isoString) return '';
@@ -66,9 +61,8 @@ function EventListPage() {
             console.error("Error formatting date:", e);
             return isoString;
         }
-    }, [i18n.language]); // Зависимость от i18n.language
+    }, [i18n.language]);
 
-    // Функция для загрузки событий с параметрами
     const loadEvents = useCallback(() => {
         const params = {
             page: currentPage,
@@ -89,32 +83,28 @@ function EventListPage() {
         ticketsFilter
     ]);
 
-    // Эффект для загрузки событий при изменении зависимостей
     useEffect(() => {
         loadEvents();
-    }, [loadEvents]); // Зависимость от мемоизированной функции loadEvents
+    }, [loadEvents]);
 
-    // Обработчик изменения страницы
     const handlePageChange = useCallback((page) => {
-        // Если пользователь пытается перейти на текущую страницу, или страница выходит за границы
+
         const calculatedTotalPages = Math.ceil(totalEvents / itemsPerPage);
         if (page === currentPage || page < 1 || page > calculatedTotalPages) return;
 
         setCurrentPage(page);
     }, [currentPage, totalEvents, itemsPerPage]);
 
-    // Обновляем общую логику фильтрации и сортировки, предполагая, что это теперь на бэкенде.
-    // `events` уже приходят отфильтрованными, отсортированными и пагинированными.
+
     const displayedEvents = useMemo(() => {
         return events;
     }, [events]);
 
     const totalPages = Math.ceil(totalEvents / itemsPerPage);
 
-    // --- ОБРАБОТЧИКИ ОТКРЫТИЯ/ЗАКРЫТИЯ МОДАЛЬНОГО ОКНА ПОДДЕРЖКИ ---
     const openSupportModal = () => setIsSupportModalOpen(true);
     const closeSupportModal = () => setIsSupportModalOpen(false);
-    // --- КОНЕЦ ОБРАБОТЧИКОВ ---
+
 
     if (eventsStatus === 'loading') return <p style={{ color: 'var(--text-color)' }}>{t('loading_events')}</p>;
     if (eventsStatus === 'failed') return <p style={{ color: 'var(--red-button-bg)' }}>{error}</p>;
@@ -159,7 +149,7 @@ function EventListPage() {
                     value={searchTerm}
                     onChange={(e) => {
                         setSearchTerm(e.target.value);
-                        // При изменении поискового запроса, сбрасываем на первую страницу
+
                         if (currentPage !== 1) setCurrentPage(1);
                     }}
                     style={{
@@ -175,7 +165,7 @@ function EventListPage() {
                     value={sortOrder}
                     onChange={(e) => {
                         setSortOrder(e.target.value);
-                        // При изменении сортировки, сбрасываем на первую страницу
+
                         if (currentPage !== 1) setCurrentPage(1);
                     }}
                     style={{
@@ -201,7 +191,7 @@ function EventListPage() {
                     value={priceFilter}
                     onChange={(e) => {
                         setPriceFilter(e.target.value);
-                        // При изменении фильтра, сбрасываем на первую страницу
+
                         if (currentPage !== 1) setCurrentPage(1);
                     }}
                     style={{
@@ -228,7 +218,7 @@ function EventListPage() {
                     value={ticketsFilter}
                     onChange={(e) => {
                         setTicketsFilter(e.target.value);
-                        // При изменении фильтра, сбрасываем на первую страницу
+
                         if (currentPage !== 1) setCurrentPage(1);
                     }}
                     style={{
@@ -245,7 +235,7 @@ function EventListPage() {
                 </select>
             </div>
 
-            {totalEvents === 0 && eventsStatus === 'succeeded' ? ( // Проверяем totalEvents и статус
+            {totalEvents === 0 && eventsStatus === 'succeeded' ? (
                 <p>{t('no_events_found')}</p>
             ) : (
                 <>

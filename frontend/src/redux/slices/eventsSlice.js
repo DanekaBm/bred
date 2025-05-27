@@ -1,12 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import API from '../../api'; // Убедитесь, что ваш API инстанс корректно импортирован
+import API from '../../api';
 
-// --- НОВЫЙ ASYNC THUNK ДЛЯ СООБЩЕНИЙ ПОДДЕРЖКИ ---
 export const sendSupportMessage = createAsyncThunk(
     'events/sendSupportMessage',
     async (messageData, { rejectWithValue }) => {
         try {
-            // Измените '/support' на '/events/support'
+
             const response = await API.post('/events/support', messageData);
             return response.data;
         } catch (error) {
@@ -14,14 +13,14 @@ export const sendSupportMessage = createAsyncThunk(
         }
     }
 );
-// --- КОНЕЦ НОВОГО ASYNC THUNK ---
+
 
 export const fetchAllEvents = createAsyncThunk(
     'events/fetchAllEvents',
-    // Изменено: теперь принимает `params` в качестве первого аргумента
+
     async (params = {}, { rejectWithValue }) => {
         try {
-            // Передаем `params` в запрос. Axios автоматически сериализует их в query string.
+
             const response = await API.get('/events', { params });
             return response.data;
         } catch (error) {
@@ -151,20 +150,20 @@ const eventsSlice = createSlice({
         currentEvent: null,
         status: 'idle',
         error: null,
-        totalEvents: 0, // Добавлено для хранения общего количества событий
-        // --- НОВОЕ СОСТОЯНИЕ ДЛЯ СООБЩЕНИЙ ПОДДЕРЖКИ ---
+        totalEvents: 0,
+
         supportMessageStatus: {
-            status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+            status: 'idle',
             error: null,
         },
-        // --- КОНЕЦ НОВОГО СОСТОЯНИЯ ---
+
     },
     reducers: {
-        // Здесь можно добавить любые синхронные редьюсеры, если они нужны.
+
     },
     extraReducers: (builder) => {
         builder
-            // --- ОБРАБОТЧИКИ ДЛЯ sendSupportMessage ---
+
             .addCase(sendSupportMessage.pending, (state) => {
                 state.supportMessageStatus.status = 'loading';
                 state.supportMessageStatus.error = null;
@@ -177,14 +176,14 @@ const eventsSlice = createSlice({
                 state.supportMessageStatus.status = 'failed';
                 state.supportMessageStatus.error = action.payload;
             })
-            // --- КОНЕЦ ОБРАБОТЧИКОВ sendSupportMessage ---
+
 
             .addCase(fetchAllEvents.pending, (state) => {
                 state.status = 'loading';
             })
             .addCase(fetchAllEvents.fulfilled, (state, action) => {
                 state.status = 'succeeded';
-                // Предполагаем, что payload содержит { events: [], totalEvents: number }
+
                 state.allEvents = action.payload.events;
                 state.totalEvents = action.payload.totalEvents;
             })
@@ -208,9 +207,9 @@ const eventsSlice = createSlice({
                 state.currentEvent = null;
             })
             .addCase(createEvent.fulfilled, (state, action) => {
-                // Если добавление нового элемента должно влиять на текущий список,
-                // возможно, потребуется повторный запрос fetchAllEvents, чтобы получить его с учетом пагинации.
-                // state.allEvents.push(action.payload);
+
+
+
             })
             .addCase(updateEvent.fulfilled, (state, action) => {
                 const index = state.allEvents.findIndex(event => event._id === action.payload._id);
@@ -226,7 +225,7 @@ const eventsSlice = createSlice({
                 if (state.currentEvent && state.currentEvent._id === action.payload) {
                     state.currentEvent = null;
                 }
-                // Также потребуется перезагрузка списка для корректной пагинации после удаления.
+
             })
             .addCase(toggleLikeEvent.fulfilled, (state, action) => {
                 const updatedEventPayload = action.payload;

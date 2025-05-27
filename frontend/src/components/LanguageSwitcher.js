@@ -15,14 +15,14 @@ const LanguageSwitcher = () => {
                 style={{
                     backgroundColor: i18n.language === 'en' ? 'var(--accent-color)' : 'var(--secondary-color)',
                     color: 'var(--text-color)',
-                    border: '1px solid var(--text-color)', // Added a border for visibility
+                    border: '1px solid var(--text-color)',
                     padding: '8px 12px',
                     borderRadius: '5px',
                     cursor: 'pointer',
                     fontWeight: i18n.language === 'en' ? 'bold' : 'normal',
                     outline: 'none',
                     transition: 'background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease',
-                    minWidth: '40px', // Ensure a minimum width
+                    minWidth: '40px',
                     textAlign: 'center' // Center text
                 }}
             >
@@ -33,14 +33,14 @@ const LanguageSwitcher = () => {
                 style={{
                     backgroundColor: i18n.language === 'ru' ? 'var(--accent-color)' : 'var(--secondary-color)',
                     color: 'var(--text-color)',
-                    border: '1px solid var(--text-color)', // Added a border for visibility
+                    border: '1px solid var(--text-color)',
                     padding: '8px 12px',
                     borderRadius: '5px',
                     cursor: 'pointer',
                     fontWeight: i18n.language === 'ru' ? 'bold' : 'normal',
                     outline: 'none',
                     transition: 'background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease',
-                    minWidth: '40px', // Ensure a minimum width
+                    minWidth: '40px',
                     textAlign: 'center' // Center text
                 }}
             >

@@ -4,10 +4,9 @@ import { useTranslation } from 'react-i18next';
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     const { t } = useTranslation();
 
-    // Улучшенная логика генерации номеров страниц для отображения
     const getPageNumbers = () => {
         const pageNumbers = [];
-        const maxPageButtons = 5; // Максимальное количество кнопок страниц для отображения
+        const maxPageButtons = 5;
 
         if (totalPages <= maxPageButtons) {
             for (let i = 1; i <= totalPages; i++) {
@@ -17,7 +16,6 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
             let endPage = Math.min(totalPages, currentPage + Math.floor(maxPageButtons / 2));
 
-            // Корректировка startPage/endPage, чтобы всегда показывать maxPageButtons
             if (endPage - startPage + 1 < maxPageButtons) {
                 if (startPage === 1) {
                     endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
@@ -29,14 +27,14 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             for (let i = startPage; i <= endPage; i++) {
                 pageNumbers.push(i);
             }
-            // Добавляем троеточие и первую/последнюю страницу, если они не в текущем диапазоне
+
             if (startPage > 1) {
-                if (startPage > 2) pageNumbers.unshift('...'); // Добавляем троеточие
-                pageNumbers.unshift(1); // Добавляем первую страницу
+                if (startPage > 2) pageNumbers.unshift('...');
+                pageNumbers.unshift(1);
             }
             if (endPage < totalPages) {
-                if (endPage < totalPages - 1) pageNumbers.push('...'); // Добавляем троеточие
-                pageNumbers.push(totalPages); // Добавляем последнюю страницу
+                if (endPage < totalPages - 1) pageNumbers.push('...');
+                pageNumbers.push(totalPages);
             }
         }
         return pageNumbers;

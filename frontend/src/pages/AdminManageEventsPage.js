@@ -70,7 +70,7 @@ const AdminManageEventsPage = () => {
 
     const handleFormChange = (e) => {
         const { name, value, type } = e.target;
-        // Для числовых полей, преобразуем значение в число
+
         setFormData({
             ...formData,
             [name]: type === 'number' ? parseFloat(value) : value
@@ -90,14 +90,12 @@ const AdminManageEventsPage = () => {
         e.preventDefault();
         setError(null);
 
-        // Проверка обязательных полей (включая price и availableTickets)
         if (!formData.title || !formData.description || !formData.date || !formData.location ||
             !formData.category || !formData.organizer || formData.price === null || formData.availableTickets === null) {
             setError(t('all_fields_required'));
             return;
         }
 
-        // Дополнительные проверки для числовых полей
         if (isNaN(formData.price) || formData.price < 0) {
             setError(t('invalid_price'));
             return;
@@ -124,12 +122,11 @@ const AdminManageEventsPage = () => {
             }
         }
 
-        // Создаем объект eventData со всеми полями, включая price и availableTickets
         const eventData = {
             ...formData,
             image: finalImageUrl,
-            price: formData.price, // Убеждаемся, что это число
-            availableTickets: formData.availableTickets // Убеждаемся, что это число
+            price: formData.price,
+            availableTickets: formData.availableTickets
         };
 
         try {
@@ -140,7 +137,7 @@ const AdminManageEventsPage = () => {
                 await createEvent(eventData);
                 alert(t('event_created_successfully'));
             }
-            // Сброс формы после успешной операции
+
             setFormData({
                 title: '',
                 description: '',
@@ -155,7 +152,7 @@ const AdminManageEventsPage = () => {
             setSelectedFile(null);
             setCurrentEvent(null);
             setIsEditing(false);
-            fetchEvents(); // Обновляем список событий
+            fetchEvents();
         } catch (err) {
             console.error('Ошибка операции с событием:', err.message);
             setError(err.message || t('error_saving_event'));
@@ -168,13 +165,13 @@ const AdminManageEventsPage = () => {
         setFormData({
             title: event.title,
             description: event.description,
-            date: event.date ? new Date(event.date).toISOString().split('T')[0] : '', // Форматируем дату для input type="date"
+            date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
             location: event.location,
             category: event.category,
             image: event.image || '',
             organizer: event.organizer,
-            price: event.price || 0, // Устанавливаем текущую цену
-            availableTickets: event.availableTickets || 0 // Устанавливаем текущее количество билетов
+            price: event.price || 0,
+            availableTickets: event.availableTickets || 0
         });
         setSelectedFile(null);
     };
@@ -219,7 +216,7 @@ const AdminManageEventsPage = () => {
     }
 
     if (!user || user.role !== 'admin') {
-        return null; // Или перенаправить на другую страницу, если еще не был перенаправлен
+        return null;
     }
 
     return (

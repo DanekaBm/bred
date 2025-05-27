@@ -1,16 +1,15 @@
-// src/components/SupportFormModal.js
+
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { sendSupportMessage } from '../redux/slices/eventsSlice'; // Мы добавим это в eventsSlice
+import { sendSupportMessage } from '../redux/slices/eventsSlice';
 
-// Иконка для закрытия (можно выбрать любую другую, например, из react-icons/fa)
 import { AiOutlineClose } from 'react-icons/ai';
 
 const SupportFormModal = ({ isOpen, onClose }) => {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    // Обратите внимание на путь к supportMessageStatus в useSelector
+
     const { status, error } = useSelector(state => state.events.supportMessageStatus);
 
     const [subject, setSubject] = useState('');
@@ -19,18 +18,18 @@ const SupportFormModal = ({ isOpen, onClose }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsSubmitted(false); // Сбрасываем статус перед новой отправкой
+        setIsSubmitted(false);
 
         try {
             await dispatch(sendSupportMessage({ subject, message })).unwrap();
             setIsSubmitted(true);
             setSubject('');
             setMessage('');
-            // Можно закрыть модальное окно через несколько секунд или дождаться действия пользователя
-            // setTimeout(onClose, 2000);
+
+
         } catch (err) {
             console.error("Failed to send support message:", err);
-            setIsSubmitted(false); // Оставляем false при ошибке
+            setIsSubmitted(false);
         }
     };
 
@@ -142,7 +141,7 @@ const inputStyle = {
     backgroundColor: 'var(--input-bg-color)',
     color: 'var(--input-text-color)',
     fontSize: '1em',
-    boxSizing: 'border-box', // Учитываем padding в общей ширине
+    boxSizing: 'border-box',
 };
 
 const textareaStyle = {

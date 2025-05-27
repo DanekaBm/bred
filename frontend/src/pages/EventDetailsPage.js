@@ -7,7 +7,7 @@ import {
     toggleDislikeEvent,
     addEventComment,
     deleteEventComment,
-    buyTickets // <-- ИМПОРТИРУЕМ НОВЫЙ THUNK
+    buyTickets
 } from '../redux/slices/eventsSlice';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
@@ -22,8 +22,8 @@ const EventDetailsPage = () => {
     const { t, i18n } = useTranslation();
 
     const event = useSelector((state) => state.events.currentEvent);
-    const status = useSelector((state) => state.events.status); // Статус для fetchEventById
-    const error = useSelector((state) => state.events.error); // Ошибка для fetchEventById
+    const status = useSelector((state) => state.events.status);
+    const error = useSelector((state) => state.events.error);
 
     const { user } = useContext(AuthContext);
     const currentUserId = user?._id;
@@ -31,19 +31,18 @@ const EventDetailsPage = () => {
 
     const [numTickets, setNumTickets] = useState(1);
 
-    const { currentEvent } = useSelector((state) => state.events); // <-- currentEvent должен быть получен здесь
+    const { currentEvent } = useSelector((state) => state.events);
 
 
     const [commentText, setCommentText] = useState('');
-    const [eventLoading, setEventLoading] = useState(true); // Для начальной загрузки event
+    const [eventLoading, setEventLoading] = useState(true);
     const [commentPosting, setCommentPosting] = useState(false);
 
-    // --- НОВОЕ СОСТОЯНИЕ ДЛЯ ПОКУПКИ БИЛЕТОВ ---
     const [numberOfTicketsToBuy, setNumberOfTicketsToBuy] = useState(1);
     const [purchaseMessage, setPurchaseMessage] = useState('');
     const [purchaseError, setPurchaseError] = useState('');
-    const purchaseStatus = useSelector(state => state.events.status); // Используем статус для отслеживания buyTickets
-    // --- КОНЕЦ НОВОГО СОСТОЯНИЯ ---
+    const purchaseStatus = useSelector(state => state.events.status);
+
 
     const formatLocalizedDateTime = (isoString) => {
         if (!isoString) return '';
@@ -66,7 +65,6 @@ const EventDetailsPage = () => {
         }
     }, [id, dispatch]);
 
-    // Для лайков и дизлайков
     const handleLike = () => {
         if (!user) {
             alert(t('login_to_like'));
@@ -85,7 +83,6 @@ const EventDetailsPage = () => {
         dispatch(toggleDislikeEvent(event._id));
     };
 
-    // Для комментариев
     const handleAddComment = async (e) => {
         e.preventDefault();
         if (!user) {
@@ -124,9 +121,8 @@ const EventDetailsPage = () => {
         }
     };
 
-    // --- НОВАЯ ФУНКЦИЯ ДЛЯ ПОКУПКИ БИЛЕТОВ ---
     const handleBuyTickets = async () => {
-        if (!user) { // user из AuthContext, а не из Redux
+        if (!user) {
             alert(t('login_to_buy_tickets'));
             navigate('/login');
             return;
@@ -149,22 +145,22 @@ const EventDetailsPage = () => {
             const resultAction = await dispatch(buyTickets({
                 eventId: event._id,
                 numberOfTickets: numberOfTicketsToBuy,
-            })).unwrap(); // .unwrap() вернет payload или выбросит ошибку
+            })).unwrap();
             setPurchaseMessage(resultAction.message);
-            setNumberOfTicketsToBuy(1); // Сброс количества
+            setNumberOfTicketsToBuy(1);
         } catch (err) {
             console.error('Ошибка при покупке билетов:', err);
-            setPurchaseError(err || t('failed_to_purchase_tickets')); // err уже содержит сообщение от rejectWithValue
+            setPurchaseError(err || t('failed_to_purchase_tickets'));
         }
     };
-    // --- КОНЕЦ НОВОЙ ФУНКЦИИ ---
 
 
-    if (eventLoading || status === 'loading') { // Проверка статуса Redux slice для fetchEventById
+
+    if (eventLoading || status === 'loading') {
         return <p style={{ textAlign: 'center', marginTop: '50px' }}>{t('loading_event_details')}</p>;
     }
 
-    if (status === 'failed') { // Ошибка Redux slice для fetchEventById
+    if (status === 'failed') {
         return <p style={{ color: 'var(--danger-color)', textAlign: 'center', marginTop: '50px' }}>{error}</p>;
     }
 
@@ -172,7 +168,6 @@ const EventDetailsPage = () => {
         return <p style={{ textAlign: 'center', marginTop: '50px' }}>{t('event_not_found')}</p>;
     }
 
-    // Для лайков и дизлайков
     const isLiked = currentUserId && event.likes && event.likes.includes(currentUserId);
     const isDisliked = currentUserId && event.dislikes && event.dislikes.includes(currentUserId);
 
@@ -302,7 +297,7 @@ const EventDetailsPage = () => {
                 </p>
 
                 {event.availableTickets > 0 ? (
-                    user ? ( // Проверяем user из AuthContext для авторизации
+                    user ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
                             <label htmlFor="numTickets" style={{ color: 'var(--text-color)' }}>{t('number_of_tickets')}:</label>
                             <input
@@ -316,7 +311,7 @@ const EventDetailsPage = () => {
                             />
                             <button
                                 onClick={handleBuyTickets}
-                                disabled={purchaseStatus === 'loading'} // Отключаем кнопку во время загрузки
+                                disabled={purchaseStatus === 'loading'}
                                 style={{
                                     padding: '10px 20px',
                                     backgroundColor: 'light-blue',
@@ -378,7 +373,7 @@ const EventDetailsPage = () => {
                             disabled={commentPosting}
                             style={{
                                 padding: '10px 20px',
-                                backgroundColor: 'var(--primary-color)', // Изменил цвет кнопки
+                                backgroundColor: 'var(--primary-color)',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '5px',

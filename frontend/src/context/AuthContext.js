@@ -1,10 +1,10 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import API from '../api'; // Убедитесь, что это правильный импорт api.js
+import API from '../api';
 
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    // Инициализируем user из localStorage, если он там есть
+
     const [user, setUser] = useState(() => {
         try {
             const storedUser = localStorage.getItem('user');
@@ -16,39 +16,37 @@ export const AuthProvider = ({ children }) => {
     });
     const [loading, setLoading] = useState(true);
 
-    // Логика проверки статуса авторизации при загрузке страницы
     useEffect(() => {
         const checkAuthStatus = async () => {
             try {
-                // Пытаемся получить профиль. Если кука есть и валидна, бэкенд вернет данные.
-                // Если куки нет или она не валидна, бэкенд вернет 401.
-                const res = await API.get('/users/profile'); // <-- ИСПРАВЛЕНО ЗДЕСЬ: /users/profile
+
+
+                const res = await API.get('/users/profile');
                 setUser(res.data);
             } catch (error) {
-                // Если произошла ошибка (например, 401 Unauthorized), это означает, что пользователь не авторизован.
+
                 console.error('Ошибка проверки статуса авторизации или пользователь не авторизован:', error.response?.data?.message || error.message);
-                // Очищаем пользователя и localStorage, так как кука невалидна
+
                 setUser(null);
                 localStorage.removeItem('user');
             } finally {
-                setLoading(false); // Завершаем состояние загрузки в любом случае
+                setLoading(false);
             }
         };
 
         checkAuthStatus();
-    }, []); // Пустой массив зависимостей означает, что эффект запустится только один раз при монтировании.
+    }, []);
 
-    // Добавляем isAdmin для удобства
     const isAdmin = user?.role === 'admin';
-    // Исправленный isAuthenticated
+
     const isAuthenticated = !!user;
 
     const login = async (email, password) => {
         try {
             const { data } = await API.post('/auth/login', { email, password });
-            // Сохраняем только данные пользователя в localStorage, без токена
+
             localStorage.setItem('user', JSON.stringify(data));
-            setUser(data); // data уже содержит данные пользователя
+            setUser(data);
             return true;
         } catch (error) {
             console.error('Login failed:', error.response?.data?.message || error.message);

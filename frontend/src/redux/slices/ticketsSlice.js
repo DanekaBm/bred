@@ -1,16 +1,15 @@
-// frontend/src/store/slices/ticketsSlice.js
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import API from '../../api'; // Убедитесь, что путь к API правильный
 
-// Thunk для получения билетов текущего пользователя
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import API from '../../api';
+
 export const fetchUserTickets = createAsyncThunk(
     'tickets/fetchUserTickets',
     async (_, { rejectWithValue }) => {
         try {
-            // Предполагаем, что бэкенд имеет маршрут GET /api/tickets/my
-            // и он защищен, чтобы только авторизованный пользователь мог получить свои билеты.
+
+
             const response = await API.get('/tickets/my');
-            return response.data; // Ожидаем массив объектов билетов
+            return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || error.message);
         }
@@ -21,11 +20,11 @@ const ticketsSlice = createSlice({
     name: 'tickets',
     initialState: {
         userTickets: [],
-        status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+        status: 'idle',
         error: null,
     },
     reducers: {
-        // Здесь можно добавить синхронные редьюсеры, если нужны, например, для очистки билетов
+
         clearUserTickets: (state) => {
             state.userTickets = [];
             state.status = 'idle';

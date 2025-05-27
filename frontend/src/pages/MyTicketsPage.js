@@ -1,4 +1,4 @@
-// frontend/src/pages/MyTicketsPage.js
+
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserTickets } from '../redux/slices/ticketsSlice';
@@ -12,15 +12,14 @@ const MyTicketsPage = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // Получаем состояние из Redux store
     const { userTickets, status, error } = useSelector((state) => state.tickets);
 
     useEffect(() => {
-        // Если пользователь не загружен или не авторизован, перенаправляем на логин
+
         if (!authLoading && !user) {
             navigate('/login');
         } else if (user) {
-            // Загружаем билеты пользователя только если пользователь авторизован
+
             dispatch(fetchUserTickets());
         }
     }, [user, authLoading, navigate, dispatch]);
@@ -34,7 +33,7 @@ const MyTicketsPage = () => {
     }
 
     if (!user) {
-        return null; // Уже перенаправили, но на всякий случай
+        return null;
     }
 
     return (

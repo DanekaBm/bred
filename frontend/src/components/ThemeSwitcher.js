@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../context/ThemeContext'; // Corrected path if needed, assuming it's 'context' not 'contexts'
+import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
 const ThemeSwitcher = () => {

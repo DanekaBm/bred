@@ -12,12 +12,12 @@ const ProtectedRoute = ({ allowedRoles }) => {
     }
 
     if (!user) {
-        // You can pass state to the login page to show a message
+
         return <Navigate to="/login" replace state={{ from: window.location.pathname, message: t('please_login_to_view_page') }} />;
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-        // Redirect to home or show an access denied message
+
         return <Navigate to="/" replace state={{ message: t('access_denied', { roles: allowedRoles.join(', ') }) }} />;
     }
 

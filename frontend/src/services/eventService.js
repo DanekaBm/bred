@@ -1,14 +1,14 @@
 import axios from 'axios';
-import API from '../api'; // Убедитесь, что ваш API инстанс корректно импортирован
+import API from '../api';
 
 const EVENTS_API_URL = '/events';
 const UPLOAD_API_URL = '/upload';
 
 export const getEvents = async (params) => {
-    // Axios автоматически добавит `params` как query string к URL.
-    // Теперь `params` может содержать: page, limit, searchTerm, sortOrder, priceRange, ticketsRange.
+
+
     const response = await API.get(EVENTS_API_URL, { params });
-    // Предполагаем, что бэкенд вернет объект вида: { events: [...], totalEvents: N }
+
     return response.data;
 };
 

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
-import { FaBell } from 'react-icons/fa'; // <-- Добавлен импорт иконки колокольчика
+import { FaBell } from 'react-icons/fa';
 
 const Header = () => {
     const { user, logout } = useAuth();
@@ -68,7 +68,7 @@ const Header = () => {
                                                     position: 'absolute',
                                                     top: '-5px',
                                                     right: '-10px',
-                                                    backgroundColor: 'var(--red-button-bg)', // Красный кружок
+                                                    backgroundColor: 'var(--red-button-bg)',
                                                     color: 'white',
                                                     borderRadius: '50%',
                                                     padding: '2px 6px',
@@ -153,5 +153,6 @@ const Header = () => {
         </header>
     );
 };
+//so
 
 export default Header;
