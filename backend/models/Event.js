@@ -1,4 +1,3 @@
-// backend/models/Event.js
 const mongoose = require('mongoose');
 
 const eventSchema = mongoose.Schema(
@@ -28,7 +27,7 @@ const eventSchema = mongoose.Schema(
             trim: true,
         },
         image: {
-            type: String, // Хранит относительный URL (например, /uploads/my_image.jpg)
+            type: String,
             default: '',
         },
         organizer: {

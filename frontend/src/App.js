@@ -1,11 +1,9 @@
 import React from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useTheme, ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
-
-// Импортируем компоненты страниц
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
@@ -16,8 +14,7 @@ import EventDetailsPage from './pages/EventDetailsPage';
 import AdminUserListPage from './pages/AdminUserListPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import AdminManageEventsPage from './pages/AdminManageEventsPage';
-
-import Header from './layouts/Header'; // <-- ИМПОРТИРУЕМ КОМПОНЕНТ HEADER (если он используется)
+import Header from './layouts/Header';
 
 import './App.css';
 

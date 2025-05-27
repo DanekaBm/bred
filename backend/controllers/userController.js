@@ -1,17 +1,11 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
-// const Event = require('../models/Event'); // Возможно, Event model использовался и для уведомлений, но обычно он нужен для событий
-// Если Event model используется только для событий, а не для уведомлений, то его можно оставить, если нет - удалить.
-// Я оставляю Event, так как в вашем прошлом коде он импортировался и использовался для getUserEvents и getLikedEvents.
 const Event = require('../models/Event');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// @desc    Получить профиль текущего аутентифицированного пользователя
-// @route   GET /api/users/profile
-// @access  Private (требует JWT в куках)
 const getUserProfile = asyncHandler(async (req, res) => {
     res.json({
         _id: req.user._id,
@@ -22,9 +16,6 @@ const getUserProfile = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Обновить профиль текущего аутентифицированного пользователя
-// @route   PUT /api/users/profile
-// @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
     const { name, email } = req.body;
 
@@ -58,9 +49,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Обновить пароль пользователя (уже авторизованного)
-// @route   PUT /api/users/update-password
-// @access  Private
 const updatePassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
 
@@ -82,17 +70,11 @@ const updatePassword = asyncHandler(async (req, res) => {
     res.json({ message: 'Пароль успешно обновлен!' });
 });
 
-// @desc    Получить всех пользователей (только для админа)
-// @route   GET /api/users
-// @access  Private/Admin
 const getAllUsers = asyncHandler(async (req, res) => {
     const users = await User.find({}).select('_id name email role avatar');
     res.json(users);
 });
 
-// @desc    Получить пользователя по ID (только для админа)
-// @route   GET /api/users/:id
-// @access  Private/Admin
 const getUserById = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
@@ -103,9 +85,6 @@ const getUserById = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Обновить пользователя (только для админа)
-// @route   PUT /api/users/:id
-// @access  Private/Admin
 const updateUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
 
@@ -130,9 +109,6 @@ const updateUser = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Удалить пользователя (только для админа)
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
 const deleteUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
 
@@ -158,7 +134,6 @@ const deleteUser = asyncHandler(async (req, res) => {
     }
 });
 
-// === ЛОГИКА ЗАГРУЗКИ АВАТАРА ===
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const uploadDir = path.join(__dirname, '..', 'uploads', 'avatars');
@@ -174,7 +149,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 1024 * 1024 * 5 }, // Лимит размера файла 5MB
+    limits: { fileSize: 1024 * 1024 * 5 },
     fileFilter: function (req, file, cb) {
         const filetypes = /jpeg|jpg|png|gif/;
         const mimetype = filetypes.test(file.mimetype);
@@ -187,9 +162,6 @@ const upload = multer({
     }
 }).single('avatar');
 
-// @desc    Загрузить или обновить аватар пользователя
-// @route   POST /api/users/upload-avatar
-// @access  Private
 const uploadAvatar = asyncHandler(async (req, res) => {
     upload(req, res, async (err) => {
         if (err) {
@@ -234,9 +206,6 @@ const uploadAvatar = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Получить события, созданные определенным пользователем
-// @route   GET /api/users/:userId/events
-// @access  Private (только для авторизованных пользователей)
 const getUserEvents = asyncHandler(async (req, res) => {
     if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
         res.status(403);
@@ -246,9 +215,6 @@ const getUserEvents = asyncHandler(async (req, res) => {
     res.json(userEvents);
 });
 
-// @desc    Получить события, которые лайкнул определенный пользователь
-// @route   GET /api/users/:userId/liked-events
-// @access  Private (только для авторизованных пользователей)
 const getLikedEvents = asyncHandler(async (req, res) => {
     if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
         res.status(403);

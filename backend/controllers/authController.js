@@ -2,9 +2,6 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
-// @desc    Регистрация нового пользователя
-// @route   POST /api/auth/register
-// @access  Public
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
 
@@ -36,9 +33,6 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Аутентификация пользователя и получение токена
-// @route   POST /api/auth/login
-// @access  Public
 const authUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
@@ -50,8 +44,8 @@ const authUser = asyncHandler(async (req, res) => {
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'None', // <-- Это изменение сохранено
-            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 дней
+            sameSite: 'None',
+            maxAge: 30 * 24 * 60 * 60 * 1000,
         })
             .json({
                 _id: user._id,
@@ -66,23 +60,17 @@ const authUser = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Выход пользователя из системы / Очистка куки
-// @route   POST /api/auth/logout
-// @access  Private
 const logoutUser = asyncHandler(async (req, res) => {
     res.cookie('token', 'none', {
         expires: new Date(Date.now() + 10 * 1000),
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax', // Для logout можно оставить Lax, так как кука удаляется
+        sameSite: 'Lax',
     });
 
     res.status(200).json({ success: true, message: 'Successfully logged out' });
 });
 
-// @desc    Сброс пароля (по имени и email)
-// @route   POST /api/auth/reset-password-direct
-// @access  Public
 const directPasswordReset = asyncHandler(async (req, res) => {
     const { email, name, newPassword } = req.body;
 

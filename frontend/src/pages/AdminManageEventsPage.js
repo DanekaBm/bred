@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-// Предполагается, что эти функции уже импортированы и работают
 import { uploadEventImage, getEvents, createEvent, updateEvent, deleteEvent } from '../services/eventService';
 
 const AdminManageEventsPage = () => {
@@ -41,15 +40,11 @@ const AdminManageEventsPage = () => {
         setError(null);
         try {
             const res = await getEvents();
-            console.log('Response from getEvents():', res); // Добавил эту строку для отладки
+            console.log('Response from getEvents():', res);
 
-            // ******************************************************
-            // ИЗМЕНЕНИЕ ЗДЕСЬ: Проверяем, является ли сам res массивом
-            // ******************************************************
             if (Array.isArray(res)) {
                 setEvents(res);
             } else if (res && Array.isArray(res.events)) {
-                // Это запасной вариант, если API будет возвращать { events: [...] }
                 setEvents(res.events);
             } else {
                 console.error('API вернул данные, которые не являются массивом или не содержат массив "events" в свойстве .events:', res);
@@ -57,7 +52,7 @@ const AdminManageEventsPage = () => {
                 setEvents([]);
             }
         } catch (err) {
-            console.error('Ошибка загрузки событий:', err); // Логируем весь объект ошибки для лучшей диагностики
+            console.error('Ошибка загрузки событий:', err);
             setError(err.message || t('error_loading_events'));
             setEvents([]);
         } finally {

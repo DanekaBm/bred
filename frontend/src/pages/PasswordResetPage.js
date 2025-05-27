@@ -1,20 +1,16 @@
-// src/pages/PasswordResetPage.js
-import React, { useState } from 'react'; // Убедитесь, что useState импортирован
-import API from '../api'; // Убедитесь, что у вас есть этот импорт для вызова API
+import React, { useState } from 'react';
+import API from '../api';
 import { useTranslation } from 'react-i18next';
 
 const PasswordResetPage = () => {
     const { t } = useTranslation();
 
-    // *** ВОТ ЧТО БЫЛО ПРОПУЩЕНО ИЛИ УДАЛЕНО ***
-    // Объявление состояний с помощью useState
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    // *** КОНЕЦ ПРОПУЩЕННОГО БЛОКА ***
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -42,13 +38,12 @@ const PasswordResetPage = () => {
                 email,
                 newPassword,
             });
-            setMessage(t(res.data.message)); // Используем t() для перевода сообщения от бэкенда
+            setMessage(t(res.data.message));
             setName('');
             setEmail('');
             setNewPassword('');
             setConfirmNewPassword('');
         } catch (err) {
-            // Используем t() для перевода сообщения об ошибке от бэкенда
             setError(t(err.response?.data?.message || 'password_reset_error_occurred'));
             console.error('Ошибка при прямом сбросе пароля:', err.response?.data || err.message);
         }

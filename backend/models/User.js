@@ -1,7 +1,6 @@
-// backend/models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto'); // Модуль Node.js для генерации токенов
+const crypto = require('crypto');
 
 const UserSchema = new mongoose.Schema({
     name: {
@@ -16,7 +15,7 @@ const UserSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        select: false // Не возвращаем пароль по умолчанию при запросах
+        select: false
     },
     role: {
         type: String,
@@ -26,7 +25,6 @@ const UserSchema = new mongoose.Schema({
     avatar: {
         type: String
     },
-    // Новые поля для сброса пароля
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 }, {
@@ -46,18 +44,14 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Метод для генерации токена сброса пароля
 UserSchema.methods.getResetPasswordToken = function () {
-    // Генерируем случайный токен
     const resetToken = crypto.randomBytes(20).toString('hex');
 
-    // Хешируем токен и сохраняем его в схему
     this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-    // Устанавливаем срок действия токена (например, 10 минут)
     this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 минут
 
-    return resetToken; // Возвращаем нехешированный токен для отправки по email
+    return resetToken;
 };
 
 module.exports = mongoose.model('User', UserSchema);

@@ -7,12 +7,12 @@ import { useAuth } from '../context/AuthContext';
 
 function HomePage() {
     const { t } = useTranslation();
-    const [featuredEvents, setFeaturedEvents] = useState([]); // Для карусели (могут быть случайными или популярными)
-    const [userEvents, setUserEvents] = useState([]); // События, созданные пользователем
-    const [likedEvents, setLikedEvents] = useState([]); // События, которые пользователь лайкнул
+    const [featuredEvents, setFeaturedEvents] = useState([]);
+    const [userEvents, setUserEvents] = useState([]);
+    const [likedEvents, setLikedEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { user } = useAuth(); // Получаем информацию о пользователе
+    const { user } = useAuth();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -20,16 +20,13 @@ function HomePage() {
             setError(null);
             if (user) {
                 try {
-                    // Загрузка событий для карусели (например, случайных или популярных)
-                    const carouselResponse = await API.get('/events/featured'); // НОВЫЙ ЭНДПОИНТ для фичеринга
+                    const carouselResponse = await API.get('/events/featured');
                     setFeaturedEvents(carouselResponse.data);
 
-                    // Загрузка событий, созданных текущим пользователем
-                    const userEventsResponse = await API.get(`/users/${user._id}/events`); // НОВЫЙ ЭНДПОИНТ для событий пользователя
+                    const userEventsResponse = await API.get(`/users/${user._id}/events`);
                     setUserEvents(userEventsResponse.data);
 
-                    // Загрузка событий, которые пользователь лайкнул
-                    const likedEventsResponse = await API.get(`/users/${user._id}/liked-events`); // НОВЫЙ ЭНДПОИНТ для лайкнутых событий
+                    const likedEventsResponse = await API.get(`/users/${user._id}/liked-events`);
                     setLikedEvents(likedEventsResponse.data);
 
 
@@ -49,7 +46,7 @@ function HomePage() {
         };
 
         fetchData();
-    }, [t, user]); // Зависимости: user, t
+    }, [t, user]);
 
     const sliderSettings = {
         dots: true,

@@ -1,4 +1,3 @@
-// frontend/src/pages/EventDetailsPage.js
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -6,15 +5,15 @@ import {
     fetchEventById,
     toggleLikeEvent,
     toggleDislikeEvent,
-    addEventComment,    // <-- ИМПОРТИРУЕМ THUNK ДЛЯ ДОБАВЛЕНИЯ КОММЕНТАРИЯ
-    deleteEventComment // <-- ИМПОРТИРУЕМ THUNK ДЛЯ УДАЛЕНИЯ КОММЕНТАРИЯ
+    addEventComment,
+    deleteEventComment
 } from '../redux/slices/eventsSlice';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
-import { FaThumbsUp, FaThumbsDown, FaStar, FaRegStar, FaTrash } from 'react-icons/fa'; // Добавьте FaTrash для удаления
+import { FaThumbsUp, FaThumbsDown, FaStar, FaRegStar, FaTrash } from 'react-icons/fa';
 
-import { AuthContext } from '../context/AuthContext'; // <--- Исправьте этот путь, если он другой!
+import { AuthContext } from '../context/AuthContext';
 
 const EventDetailsPage = () => {
     const { id } = useParams();
@@ -26,13 +25,13 @@ const EventDetailsPage = () => {
     const status = useSelector((state) => state.events.status);
     const error = useSelector((state) => state.events.error);
 
-    const { user } = useContext(AuthContext); // Получаем данные пользователя из контекста
-    const currentUserId = user?._id; // ID текущего залогиненного пользователя
-    const isAdmin = user?.role === 'admin'; // Проверяем, является ли пользователь админом
+    const { user } = useContext(AuthContext);
+    const currentUserId = user?._id;
+    const isAdmin = user?.role === 'admin';
 
-    const [commentText, setCommentText] = useState(''); // Состояние для текста нового комментария
+    const [commentText, setCommentText] = useState('');
     const [eventLoading, setEventLoading] = useState(true);
-    const [commentPosting, setCommentPosting] = useState(false); // Состояние для индикатора отправки комментария
+    const [commentPosting, setCommentPosting] = useState(false);
 
     const formatLocalizedDateTime = (isoString) => {
         if (!isoString) return '';
@@ -71,7 +70,6 @@ const EventDetailsPage = () => {
         dispatch(toggleDislikeEvent(event._id));
     };
 
-    // --- НОВАЯ ФУНКЦИОНАЛЬНОСТЬ КОММЕНТАРИЕВ ---
     const handleAddComment = async (e) => {
         e.preventDefault();
         if (!user) {
@@ -79,16 +77,16 @@ const EventDetailsPage = () => {
             return;
         }
         if (commentText.trim() === '') {
-            alert(t('comment_cannot_be_empty')); // Добавьте это в перевод
+            alert(t('comment_cannot_be_empty'));
             return;
         }
 
         setCommentPosting(true);
         try {
             await dispatch(addEventComment({ eventId: event._id, text: commentText })).unwrap();
-            setCommentText(''); // Очищаем поле после успешной отправки
+            setCommentText('');
         } catch (err) {
-            alert(`${t('error_adding_comment')}: ${err}`); // Добавьте это в перевод
+            alert(`${t('error_adding_comment')}: ${err}`);
             console.error('Error adding comment:', err);
         } finally {
             setCommentPosting(false);
@@ -100,16 +98,15 @@ const EventDetailsPage = () => {
             navigate('/login');
             return;
         }
-        if (window.confirm(t('confirm_delete_comment'))) { // Добавьте это в перевод
+        if (window.confirm(t('confirm_delete_comment'))) {
             try {
                 await dispatch(deleteEventComment({ eventId: event._id, commentId })).unwrap();
             } catch (err) {
-                alert(`${t('error_deleting_comment')}: ${err}`); // Добавьте это в перевод
+                alert(`${t('error_deleting_comment')}: ${err}`);
                 console.error('Error deleting comment:', err);
             }
         }
     };
-    // --- КОНЕЦ НОВОЙ ФУНКЦИОНАЛЬНОСТИ КОММЕНТАРИЕВ ---
 
 
     if (eventLoading || status === 'loading') {
@@ -250,7 +247,7 @@ const EventDetailsPage = () => {
                         <textarea
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
-                            placeholder={t('write_a_comment')} // Добавьте в перевод
+                            placeholder={t('write_a_comment')}
                             rows="4"
                             style={{
                                 width: '100%',
@@ -267,7 +264,7 @@ const EventDetailsPage = () => {
                             disabled={commentPosting}
                             style={{
                                 padding: '10px 20px',
-                                backgroundColor: 'var(--primary-color)',
+                                backgroundColor: 'light-blue',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '5px',
@@ -276,16 +273,15 @@ const EventDetailsPage = () => {
                                 opacity: commentPosting ? 0.7 : 1
                             }}
                         >
-                            {commentPosting ? t('posting') : t('add_comment')} {/* Добавьте в перевод */}
+                            {commentPosting ? t('posting') : t('add_a_comment')}
                         </button>
                     </form>
                 ) : (
                     <p style={{ color: 'var(--secondary-color)', marginBottom: '20px' }}>
-                        {t('login_to_comment')} {/* Добавьте в перевод */}
+                        {t('login_to_comment')}
                     </p>
                 )}
 
-                {/* Список комментариев */}
                 {event.comments && event.comments.length > 0 ? (
                     <div style={{ borderTop: '1px solid var(--card-border-color)', paddingTop: '20px' }}>
                         {event.comments.map((comment) => (
@@ -316,7 +312,7 @@ const EventDetailsPage = () => {
                                             cursor: 'pointer',
                                             fontSize: '1.2em'
                                         }}
-                                        title={t('delete_comment')} // Добавьте в перевод
+                                        title={t('delete_comment')}
                                     >
                                         <FaTrash />
                                     </button>
@@ -325,10 +321,9 @@ const EventDetailsPage = () => {
                         ))}
                     </div>
                 ) : (
-                    <p style={{ color: 'var(--secondary-color)' }}>{t('no_comments_yet')}</p> // Добавьте в перевод
+                    <p style={{ color: 'var(--secondary-color)' }}>{t('no_comments_yet')}</p>
                 )}
             </div>
-            {/* --- КОНЕЦ РАЗДЕЛА КОММЕНТАРИЕВ --- */}
 
 
             <button onClick={() => navigate('/events')} style={{

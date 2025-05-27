@@ -1,10 +1,8 @@
-// frontend/src/pages/UserManagementPage.js
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import API from '../api';
 import { useTranslation } from 'react-i18next';
-import './UserManagementPage.css'; // Создадим этот CSS файл позже
 
 function UserManagementPage() {
     const { user, loading: authLoading } = useAuth();
@@ -18,9 +16,8 @@ function UserManagementPage() {
     const [userToDelete, setUserToDelete] = useState(null);
 
     useEffect(() => {
-        // Защита маршрута: только админ
         if (!authLoading && (!user || user.role !== 'admin')) {
-            navigate('/login'); // Перенаправление, если не админ
+            navigate('/login');
             return;
         }
         if (!authLoading && user && user.role === 'admin') {
@@ -53,10 +50,10 @@ function UserManagementPage() {
         try {
             await API.delete(`/users/${userToDelete._id}`);
             setUsers(users.filter(u => u._id !== userToDelete._id));
-            alert(t('user_deleted_success', { email: userToDelete.email })); // Добавим этот ключ в переводы
+            alert(t('user_deleted_success', { email: userToDelete.email }));
         } catch (err) {
             console.error('Error deleting user:', err);
-            alert(err.response?.data?.message || t('user_delete_error')); // Добавим этот ключ в переводы
+            alert(err.response?.data?.message || t('user_delete_error'));
         } finally {
             setShowConfirm(false);
             setUserToDelete(null);
@@ -86,16 +83,14 @@ function UserManagementPage() {
             {users.map(u => (
                 <li key={u._id} className="user-item">
             <span>{t('name_label')} {u.name} ({u.email}) - {t('role_label')} {u.role}</span>
-            {/* Нельзя удалить самого себя */}
             {user._id !== u._id && (
                 <button
                     onClick={() => handleDeleteClick(u)}
                     className="delete-button"
                 >
-                    {t('delete_user')} {/* Добавим этот ключ */}
+                    {t('delete_user')}
                 </button>
             )}
-            {/* Можно запретить удалять последнего админа, но для этого нужно больше логики */}
         </li>
     ))}
 </ul>
@@ -103,7 +98,7 @@ function UserManagementPage() {
 
 {showConfirm && (
         <div className="confirmation-dialog">
-            <p>{t('are_you_sure_delete_user', { email: userToDelete?.email })}</p> {/* Добавим этот ключ */}
+            <p>{t('are_you_sure_delete_user', { email: userToDelete?.email })}</p>
             <button onClick={confirmDeleteUser} className="confirm-button">{t('yes_confirm')}</button>
             <button onClick={cancelDelete} className="cancel-button">{t('no_cancel')}</button>
         </div>

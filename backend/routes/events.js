@@ -1,4 +1,3 @@
-// backend/routes/events.js
 const express = require('express');
 const router = express.Router();
 const {
@@ -8,23 +7,20 @@ const {
     updateEvent,
     deleteEvent,
     toggleLikeEvent,
-    toggleDislikeEvent, // <-- ИМПОРТИРУЕМ НОВУЮ ФУНКЦИЮ
+    toggleDislikeEvent,
     addComment,
     deleteComment,
     getFeaturedEvents,
 } = require('../controllers/eventController');
 const { protect } = require('../middleware/authMiddleware');
 
-// НОВЫЕ ПЕРСОНАЛИЗИРОВАННЫЕ МАРШРУТЫ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ (Сначала, так как они более специфичны)
-router.get('/featured', getFeaturedEvents); // Получить рекомендованные (для карусели)
+router.get('/featured', getFeaturedEvents);
 
-// Маршруты для событий (ОБЩИЕ МАРШРУТЫ - после специфичных)
 router.route('/').get(getEvents).post(protect, createEvent);
 router.route('/:id').get(getEventById).put(protect, updateEvent).delete(protect, deleteEvent);
 
-// Лайки и комментарии
 router.post('/:id/like', protect, toggleLikeEvent);
-router.post('/:id/dislike', protect, toggleDislikeEvent); // <-- НОВЫЙ МАРШРУТ ДЛЯ ДИЗЛАЙКОВ
+router.post('/:id/dislike', protect, toggleDislikeEvent);
 router.post('/:id/comment', protect, addComment);
 router.delete('/:id/comment/:commentId', protect, deleteComment);
 

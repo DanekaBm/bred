@@ -12,27 +12,23 @@ function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Состояния для обновления профиля
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [profileUpdateMessage, setProfileUpdateMessage] = useState('');
     const [profileUpdateError, setProfileUpdateError] = useState('');
 
-    // Состояния для обновления пароля
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [passwordUpdateMessage, setPasswordUpdateMessage] = useState('');
     const [passwordUpdateError, setPasswordUpdateError] = useState('');
 
-    // Состояние для загрузки аватара
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarUploadMessage, setAvatarUploadMessage] = useState('');
     const [avatarUploadError, setAvatarUploadError] = useState('');
-    // Добавляем состояние для отображаемого имени файла
     const [displayFileName, setDisplayFileName] = useState('');
 
-    const fileInputRef = useRef(null); // Создаем ref для инпута файла
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -47,9 +43,7 @@ function ProfilePage() {
                 setEmail(res.data.email);
                 setLoading(false);
             } catch (err) {
-                // Ошибка при загрузке профиля
-                // err.response?.data?.message будет содержать английское сообщение от бэкенда
-                setError(t(err.response?.data?.message || 'profile_load_error')); // Передаем err.response?.data?.message в t()
+                setError(t(err.response?.data?.message || 'profile_load_error'));
                 setLoading(false);
                 console.error('Ошибка загрузки профиля:', err.response?.data || err.message);
                 if (err.response?.status === 401) {
@@ -69,11 +63,8 @@ function ProfilePage() {
         try {
             const updatedUser = await updateProfile({ name, email });
             setProfileData(updatedUser);
-            // Если updatedUser.message приходит от бэкенда, переводим его
             setProfileUpdateMessage(t(updatedUser.message || 'profile_update_success'));
         } catch (err) {
-            // Ошибка обновления профиля
-            // err.message или err.response?.data?.message будет содержать английское сообщение
             setProfileUpdateError(t(err.response?.data?.message || 'profile_update_error'));
             console.error('Ошибка обновления профиля:', err.response?.data || err.message);
         }
@@ -90,16 +81,12 @@ function ProfilePage() {
         }
 
         try {
-            // Функция updatePassword должна возвращать объект, содержащий message
-            // или просто строку message, как вы ее вызываете.
-            // Если она возвращает объект с message: '...'
             const res = await updatePassword(oldPassword, newPassword);
             setPasswordUpdateMessage(t(res.message || 'password_update_success'));
             setOldPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
         } catch (err) {
-            // Ошибка обновления пароля
             setPasswordUpdateError(t(err.response?.data?.message || 'password_update_error'));
         }
     };
@@ -125,22 +112,21 @@ function ProfilePage() {
         }
 
         try {
-            const res = await uploadAvatar(avatarFile); // Предполагаем, что uploadAvatar также возвращает res.data.message
-            setProfileData(prevData => ({ ...prevData, avatar: res.avatarUrl || res.data.avatarUrl })); // Используем то, что возвращает API
-            setAvatarUploadMessage(t(res.message || 'avatar_upload_success')); // Переводим сообщение
+            const res = await uploadAvatar(avatarFile);
+            setProfileData(prevData => ({ ...prevData, avatar: res.avatarUrl || res.data.avatarUrl }));
+            setAvatarUploadMessage(t(res.message || 'avatar_upload_success'));
             setAvatarFile(null);
             setDisplayFileName('');
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
         } catch (err) {
-            setAvatarUploadError(t(err.response?.data?.message || 'avatar_upload_error')); // Переводим сообщение об ошибке
+            setAvatarUploadError(t(err.response?.data?.message || 'avatar_upload_error'));
             console.error('Ошибка загрузки аватара:', err.response?.data || err.message);
         }
     };
 
     if (loading) return <p style={{ color: 'var(--text-color)' }}>{t('loading_profile')}</p>;
-    // Здесь error уже будет переведен
     if (error) return <p style={{ color: 'var(--red-button-bg)' }}>{error}</p>;
     if (!user) return <p style={{ color: 'var(--text-color)' }}>{t('please_login_to_view_profile')}</p>;
 
@@ -167,7 +153,6 @@ function ProfilePage() {
                     <p style={{ color: 'var(--text-color)' }}><strong>{t('email')}:</strong> {profileData.email}</p>
                     <p style={{ color: 'var(--text-color)' }}><strong>{t('role_label')}:</strong> {profileData.role}</p>
 
-                    {/* Форма для обновления имени и email */}
                     <h3 style={{ color: 'var(--text-color)', marginTop: '30px' }}>{t('update_profile')}</h3>
                     <form onSubmit={handleProfileUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px', border: '1px solid var(--card-border-color)', borderRadius: '8px', backgroundColor: 'var(--background-color)', transition: 'background-color 0.3s ease, border-color 0.3s ease' }}>
                         <input
@@ -218,7 +203,6 @@ function ProfilePage() {
                         {profileUpdateError && <p style={{ color: 'var(--red-button-bg)' }}>{profileUpdateError}</p>}
                     </form>
 
-                    {/* Форма для загрузки аватара */}
                     <h3 style={{ color: 'var(--text-color)', marginTop: '30px' }}>{t('upload_update_avatar')}</h3>
                     <form onSubmit={handleAvatarUpload} style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px', border: '1px solid var(--card-border-color)', borderRadius: '8px', backgroundColor: 'var(--background-color)', transition: 'background-color 0.3s ease, border-color 0.3s ease' }}>
                         <input
@@ -261,7 +245,6 @@ function ProfilePage() {
                         {avatarUploadError && <p style={{ color: 'var(--red-button-bg)' }}>{avatarUploadError}</p>}
                     </form>
 
-                    {/* Форма для изменения пароля */}
                     <h3 style={{ color: 'var(--text-color)', marginTop: '30px' }}>{t('change_password')}</h3>
                     <form onSubmit={handlePasswordUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px', border: '1px solid var(--card-border-color)', borderRadius: '8px', backgroundColor: 'var(--background-color)', transition: 'background-color 0.3s ease, border-color 0.3s ease' }}>
                         <input

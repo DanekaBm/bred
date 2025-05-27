@@ -1,18 +1,14 @@
-// backend/routes/uploadRoutes.js
 const path = require('path');
 const express = require('express');
 const multer = require('multer');
 
 const router = express.Router();
 
-// Настройка хранилища для multer
 const storage = multer.diskStorage({
     destination(req, file, cb) {
-        cb(null, 'uploads/'); // Указываем папку 'uploads/' в корне проекта бэкенда
+        cb(null, 'uploads/');
     },
     filename(req, file, cb) {
-        // Формируем уникальное имя файла: fieldname-timestamp.расширение
-        // ЭТОТ БЛОК ИСПРАВЛЕН: УБЕДИТЕСЬ, ЧТО НЕТ HTML-ТЕГОВ ИЛИ ЭКРАНИРОВАННЫХ СИМВОЛОВ
         cb(
             null,
             `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
@@ -20,7 +16,6 @@ const storage = multer.diskStorage({
     },
 });
 
-// Определение, какие файлы разрешены для загрузки
 function checkFileType(file, cb) {
     const filetypes = /jpeg|jpg|png|gif/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -33,21 +28,19 @@ function checkFileType(file, cb) {
     }
 }
 
-// Инициализация multer с настройками
 const upload = multer({
     storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Ограничение размера файла (например, 5 МБ)
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: function (req, file, cb) {
         checkFileType(file, cb);
     },
 });
 
-// Маршрут для загрузки одного файла
 router.post('/', upload.single('image'), (req, res) => {
     if (req.file) {
         res.send({
             message: 'Изображение успешно загружено',
-            imageUrl: `/uploads/${req.file.filename}`, // Путь, который будет храниться в БД
+            imageUrl: `/uploads/${req.file.filename}`,
         });
     } else {
         res.status(400).send('Ошибка загрузки файла');
